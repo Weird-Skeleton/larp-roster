@@ -50,7 +50,8 @@ const Icons = {
   Trash: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>,
   Download: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>,
   Upload: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>,
-  Save: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+  Save: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>,
+  Menu: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
 };
 
 const Toast = ({ message, type, onClose }) => {
@@ -66,14 +67,33 @@ const Toast = ({ message, type, onClose }) => {
   );
 };
 
+// Universal JSON Translator
+// Converts older, flat JSON files into the new nested structure smoothly
+const normalizeCharacter = (data) => {
+  if (data.basicInfo) {
+    return { ...data, id: data.id || `char-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` };
+  }
+  return {
+    id: data._id || `char-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    basicInfo: {
+      playerName: data['Player Name'] || '',
+      characterName: data['Character Name'] || 'Unknown Character',
+      race: data['Race'] || '',
+      level: data['Level'] || '',
+      playerNumber: data['Player Number'] || '',
+      rulebookLastUpdated: data['Rulebook Last Updated'] || ''
+    },
+    experience: data.Experience || {},
+    resources: data.Resources || {},
+    skills: Array.isArray(data.Skills) ? data.Skills : (data.Skills ? data.Skills.split('\n') : [])
+  };
+};
+
 const DictionaryEditor = ({ title, data, onChange }) => {
   const entries = Object.entries(data);
 
   const handleKeyChange = (oldKey, newKey) => {
-    // Allows editing the key; if it's the same, skip.
     if (oldKey === newKey) return;
-    
-    // We recreate the object, maintaining order as best as possible
     const newData = {};
     for (const [k, v] of Object.entries(data)) {
       if (k === oldKey) {
@@ -196,8 +216,32 @@ const SkillsEditor = ({ skills, onChange }) => {
 export default function App() {
   const [characters, setCharacters] = useState(INITIAL_CHARACTERS);
   const [selectedId, setSelectedId] = useState(INITIAL_CHARACTERS[0].id);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [toast, setToast] = useState({ message: '', type: 'success' });
   const fileInputRef = useRef(null);
+
+  // Restore the auto-loading of the characters folder
+  useEffect(() => {
+    const loadCharacters = async () => {
+      try {
+        const loaded = [];
+        const characterFiles = import.meta.glob('./characters/*.json');
+        
+        for (const path in characterFiles) {
+          const mod = await characterFiles[path]();
+          loaded.push(normalizeCharacter(mod.default));
+        }
+        
+        if (loaded.length > 0) {
+          setCharacters(loaded);
+          setSelectedId(loaded[0].id);
+        }
+      } catch (e) {
+        console.error("Error loading local characters", e);
+      }
+    };
+    loadCharacters();
+  }, []);
 
   const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type });
@@ -228,6 +272,7 @@ export default function App() {
     };
     setCharacters([...characters, newChar]);
     setSelectedId(newChar.id);
+    if (!isSidebarOpen) setIsSidebarOpen(true);
     showToast('New character created.');
   };
 
@@ -270,30 +315,26 @@ export default function App() {
       try {
         const importedData = JSON.parse(e.target.result);
         
+        let charsToAdd = [];
         if (Array.isArray(importedData)) {
-          // Add basic validation
-          const validChars = importedData.filter(c => c.id && c.basicInfo);
-          if(validChars.length > 0) {
-            // Overwrite or Merge strategy. For simplicity, we append imported files and reset IDs to avoid collision
-            const newChars = validChars.map((c, i) => ({ ...c, id: `imported-${Date.now()}-${i}` }));
-            setCharacters(prev => [...prev, ...newChars]);
-            showToast(`Imported ${newChars.length} characters successfully.`);
-          } else {
-             showToast('Invalid array format.', 'error');
-          }
-        } else if (importedData.id && importedData.basicInfo) {
-          // Single character
-          importedData.id = `imported-${Date.now()}`;
-          setCharacters(prev => [...prev, importedData]);
-          setSelectedId(importedData.id);
-          showToast(`Imported ${importedData.basicInfo.characterName}.`);
+          charsToAdd = importedData.map(normalizeCharacter);
         } else {
-          showToast('Invalid JSON structure. Ensure it is a valid Laire character.', 'error');
+          charsToAdd = [normalizeCharacter(importedData)];
+        }
+
+        if(charsToAdd.length > 0) {
+          // Generate completely new unique IDs so we don't accidentally overwrite existing characters
+          const newChars = charsToAdd.map(c => ({...c, id: `imported-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`}));
+          setCharacters(prev => [...prev, ...newChars]);
+          setSelectedId(newChars[0].id);
+          showToast(`Imported ${newChars.length} character(s) successfully.`);
+        } else {
+          showToast('Invalid JSON structure.', 'error');
         }
       } catch (err) {
         showToast('Failed to parse JSON file.', 'error');
       }
-      if (fileInputRef.current) fileInputRef.current.value = ''; // reset input
+      if (fileInputRef.current) fileInputRef.current.value = '';
     };
     reader.readAsText(file);
   };
@@ -304,6 +345,13 @@ export default function App() {
       <header className="bg-slate-900 text-white shadow-md flex-shrink-0 z-20">
         <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+              className="p-2 bg-slate-800 hover:bg-slate-700 rounded-md transition-colors text-slate-300 hover:text-white" 
+              title="Toggle Roster Sidebar"
+            >
+              <Icons.Menu />
+            </button>
             <div className="bg-indigo-600 p-2 rounded-lg shadow-inner">
               <Icons.Save />
             </div>
@@ -325,56 +373,58 @@ export default function App() {
       </header>
 
       {/* Main Content Area */}
-      <div className="flex flex-1 overflow-hidden max-w-7xl w-full mx-auto p-4 gap-6">
+      <div className="flex flex-1 overflow-hidden max-w-7xl w-full mx-auto p-4">
         
-        {/* Sidebar Roster */}
-        <aside className="w-full md:w-1/3 lg:w-1/4 max-w-xs flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex-shrink-0">
-          <div className="px-4 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center z-10">
-            <h2 className="font-bold text-slate-700 text-lg flex items-center gap-2">
-              Roster <span className="bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full text-xs">{characters.length}</span>
-            </h2>
-            <button onClick={handleAddCharacter} className="text-indigo-600 hover:text-white bg-indigo-50 hover:bg-indigo-600 p-1.5 rounded-md transition-colors shadow-sm" title="Create New Character">
-              <Icons.Plus />
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
-            {characters.map(char => {
-              const isSelected = selectedId === char.id;
-              return (
-                <div 
-                  key={char.id} 
-                  onClick={() => setSelectedId(char.id)}
-                  className={`p-3 rounded-lg border cursor-pointer transition-all flex justify-between items-center group
-                    ${isSelected 
-                      ? 'bg-indigo-50 border-indigo-200 shadow-sm' 
-                      : 'bg-white border-transparent hover:bg-slate-50 hover:border-slate-200'}`}
-                >
-                  <div className="overflow-hidden pr-2">
-                    <div className={`font-bold truncate text-sm ${isSelected ? 'text-indigo-900' : 'text-slate-700'}`}>
-                      {char.basicInfo.characterName || 'Unnamed Character'}
-                    </div>
-                    <div className="text-xs text-slate-500 truncate mt-0.5 font-medium">
-                      {char.basicInfo.playerName || 'Unknown Player'} <span className="text-slate-300">•</span> Lvl {char.basicInfo.level || '?'}
-                    </div>
-                  </div>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); handleDeleteCharacter(char.id, char.basicInfo.characterName); }}
-                    className={`text-slate-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-md transition-all ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
-                    title="Delete Character"
+        {/* Sidebar Roster Wrapper */}
+        <div className={`transition-all duration-300 ease-in-out flex-shrink-0 h-full overflow-hidden ${isSidebarOpen ? 'w-full md:w-1/3 lg:w-1/4 max-w-xs mr-6 opacity-100' : 'w-0 opacity-0'}`}>
+          <aside className="w-full min-w-[280px] h-full flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="px-4 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center z-10">
+              <h2 className="font-bold text-slate-700 text-lg flex items-center gap-2">
+                Roster <span className="bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full text-xs">{characters.length}</span>
+              </h2>
+              <button onClick={handleAddCharacter} className="text-indigo-600 hover:text-white bg-indigo-50 hover:bg-indigo-600 p-1.5 rounded-md transition-colors shadow-sm" title="Create New Character">
+                <Icons.Plus />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
+              {characters.map(char => {
+                const isSelected = selectedId === char.id;
+                return (
+                  <div 
+                    key={char.id} 
+                    onClick={() => setSelectedId(char.id)}
+                    className={`p-3 rounded-lg border cursor-pointer transition-all flex justify-between items-center group
+                      ${isSelected 
+                        ? 'bg-indigo-50 border-indigo-200 shadow-sm' 
+                        : 'bg-white border-transparent hover:bg-slate-50 hover:border-slate-200'}`}
                   >
-                    <Icons.Trash />
-                  </button>
+                    <div className="overflow-hidden pr-2">
+                      <div className={`font-bold truncate text-sm ${isSelected ? 'text-indigo-900' : 'text-slate-700'}`}>
+                        {char.basicInfo.characterName || 'Unnamed Character'}
+                      </div>
+                      <div className="text-xs text-slate-500 truncate mt-0.5 font-medium">
+                        {char.basicInfo.playerName || 'Unknown Player'} <span className="text-slate-300">•</span> Lvl {char.basicInfo.level || '?'}
+                      </div>
+                    </div>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleDeleteCharacter(char.id, char.basicInfo.characterName); }}
+                      className={`text-slate-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-md transition-all ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                      title="Delete Character"
+                    >
+                      <Icons.Trash />
+                    </button>
+                  </div>
+                );
+              })}
+              {characters.length === 0 && (
+                <div className="p-8 text-center flex flex-col items-center gap-3 text-slate-400">
+                  <svg className="w-12 h-12 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                  <p className="text-sm font-medium">Roster is empty.</p>
                 </div>
-              );
-            })}
-            {characters.length === 0 && (
-              <div className="p-8 text-center flex flex-col items-center gap-3 text-slate-400">
-                <svg className="w-12 h-12 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                <p className="text-sm font-medium">Roster is empty.</p>
-              </div>
-            )}
-          </div>
-        </aside>
+              )}
+            </div>
+          </aside>
+        </div>
 
         {/* Editing Pane */}
         <main className="flex-1 overflow-y-auto bg-slate-50 rounded-xl relative custom-scrollbar border border-slate-200 shadow-sm">
