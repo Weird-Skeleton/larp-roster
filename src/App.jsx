@@ -309,13 +309,13 @@ export default function App() {
             </div>
             <div>
               <h1 className="text-xl font-extrabold tracking-wide leading-none">LAIRE</h1>
-              <span className="text-xs text-indigo-300 font-medium tracking-widest uppercase">Character Editor</span>
+              <span className="text-xs text-indigo-300 font-medium tracking-widest uppercase">Character Editor : Send feedback to @Weird_Skeleton on discord!</span>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
             <input type="file" accept=".json" ref={fileInputRef} onChange={handleImport} className="hidden" />
             <button onClick={() => fileInputRef.current.click()} className="flex items-center gap-2 bg-slate-800 border border-slate-700 hover:bg-slate-700 px-4 py-2 rounded-md text-sm font-semibold transition-colors shadow-sm">
-              <Icons.Upload /> Import Roster
+              <Icons.Upload /> Import JSON
             </button>
             <button onClick={exportAll} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 border border-emerald-500 px-4 py-2 rounded-md text-sm font-semibold transition-colors shadow-sm">
               <Icons.Download /> Save Roster (JSON)
