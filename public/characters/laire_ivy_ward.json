@@ -1,0 +1,40 @@
+{
+  "id": "imported-1790617326289",
+  "basicInfo": {
+    "playerName": "Jamie Czermanski",
+    "characterName": "Ivy Ward",
+    "race": "Celt",
+    "level": "3",
+    "playerNumber": "",
+    "rulebookLastUpdated": ""
+  },
+  "experience": {
+    "Total Earned": "5",
+    "Total Spent": "51",
+    "Total Character Build": "51",
+    "Unspent": "0",
+    "Last Event Build": "5",
+    "Purchased BP": "1"
+  },
+  "resources": {
+    "Body": "7",
+    "Current Power Points": "21",
+    "Max Power Points": "21",
+    "Marbles": "17W 3B 0R",
+    "Deaths": "0",
+    "Permanent PP Loss": "0",
+    "Sorcerer Ritual Bonus": "0",
+    "Spell Singing Points": "0"
+  },
+  "skills": [
+    " Mage Basic Career",
+    "Rogue Basic Career",
+    "Small Weapons Skill",
+    "Crossbow Skill",
+    "Waylay",
+    "Blather",
+    "Death Rank 1",
+    "Pyro Rank 1",
+    "Pick Lock"
+  ]
+}
