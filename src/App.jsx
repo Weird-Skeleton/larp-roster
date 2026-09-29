@@ -47,11 +47,14 @@ const INITIAL_CHARACTERS = [
 
 const Icons = {
   Plus: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>,
+  Minus: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>,
   Trash: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>,
   Download: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>,
   Upload: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>,
   Save: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>,
-  Menu: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+  Menu: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>,
+  Tree: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="22" x2="12" y2="13"></line><line x1="12" y1="13" x2="12" y2="8"></line><line x1="12" y1="13" x2="17" y2="13"></line><line x1="17" y1="13" x2="17" y2="16"></line><line x1="12" y1="8" x2="7" y2="8"></line><line x1="7" y1="8" x2="7" y2="5"></line><line x1="12" y1="8" x2="17" y2="8"></line><line x1="17" y1="8" x2="17" y2="5"></line><line x1="7" y1="8" x2="7" y2="11"></line><circle cx="12" cy="22" r="1"></circle></svg>,
+  Users: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
 };
 
 const Toast = ({ message, type, onClose }) => {
@@ -67,8 +70,6 @@ const Toast = ({ message, type, onClose }) => {
   );
 };
 
-// Universal JSON Translator
-// Converts older, flat JSON files into the new nested structure smoothly
 const normalizeCharacter = (data) => {
   if (data.basicInfo) {
     return { ...data, id: data.id || `char-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` };
@@ -96,18 +97,13 @@ const DictionaryEditor = ({ title, data, onChange }) => {
     if (oldKey === newKey) return;
     const newData = {};
     for (const [k, v] of Object.entries(data)) {
-      if (k === oldKey) {
-        newData[newKey] = v;
-      } else {
-        newData[k] = v;
-      }
+      if (k === oldKey) { newData[newKey] = v; } 
+      else { newData[k] = v; }
     }
     onChange(newData);
   };
 
-  const handleValueChange = (key, newValue) => {
-    onChange({ ...data, [key]: newValue });
-  };
+  const handleValueChange = (key, newValue) => { onChange({ ...data, [key]: newValue }); };
 
   const handleRemove = (key) => {
     const newData = { ...data };
@@ -137,17 +133,13 @@ const DictionaryEditor = ({ title, data, onChange }) => {
         {entries.map(([key, value], idx) => (
           <div key={idx} className="flex gap-2 items-center bg-slate-50 p-2 rounded-md border border-slate-200 group focus-within:ring-2 focus-within:ring-indigo-100 focus-within:border-indigo-300 transition-all">
             <input 
-              type="text" 
-              value={key} 
-              onChange={(e) => handleKeyChange(key, e.target.value)}
+              type="text" value={key} onChange={(e) => handleKeyChange(key, e.target.value)}
               className="w-1/2 bg-transparent text-sm font-semibold text-slate-600 outline-none px-2 py-1 placeholder-slate-400"
               placeholder="Field Name"
             />
             <span className="text-slate-300 font-bold">:</span>
             <input 
-              type="text" 
-              value={value}
-              onChange={(e) => handleValueChange(key, e.target.value)}
+              type="text" value={value} onChange={(e) => handleValueChange(key, e.target.value)}
               className="w-1/2 bg-white text-sm text-slate-900 outline-none border border-slate-200 focus:border-indigo-500 rounded px-2 py-1 placeholder-slate-400"
               placeholder="Value"
             />
@@ -172,15 +164,11 @@ const SkillsEditor = ({ skills, onChange }) => {
     newSkills[idx] = newValue;
     onChange(newSkills);
   };
-
   const handleRemove = (idx) => {
     const newSkills = skills.filter((_, i) => i !== idx);
     onChange(newSkills);
   };
-
-  const handleAdd = () => {
-    onChange([...skills, 'New Skill']);
-  };
+  const handleAdd = () => { onChange([...skills, 'New Skill']); };
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-5 mb-6">
@@ -194,9 +182,7 @@ const SkillsEditor = ({ skills, onChange }) => {
         {skills.map((skill, idx) => (
           <div key={idx} className="flex items-center bg-indigo-50 border border-indigo-100 rounded-full pl-3 pr-1 py-1 group focus-within:ring-2 focus-within:ring-indigo-300">
             <input 
-              type="text" 
-              value={skill} 
-              onChange={(e) => handleSkillChange(idx, e.target.value)}
+              type="text" value={skill} onChange={(e) => handleSkillChange(idx, e.target.value)}
               className="bg-transparent text-sm font-medium text-indigo-900 outline-none px-1 min-w-[120px]"
             />
             <button 
@@ -213,34 +199,163 @@ const SkillsEditor = ({ skills, onChange }) => {
   );
 };
 
+const SkillTreeViewer = ({ allSkills, selectedChar, onUpdateSkills, showToast }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Extract the current character's skills into a lowercase array for easy matching
+  const charSkills = selectedChar ? (Array.isArray(selectedChar.skills) ? selectedChar.skills : []) : [];
+  const charSkillsLower = charSkills.map(s => typeof s === 'string' ? s.toLowerCase().trim() : '');
+
+  const handleToggleSkill = (skillName) => {
+    if (!selectedChar) {
+      showToast('Please select a character from the roster first.', 'error');
+      return;
+    }
+    
+    const hasSkill = charSkillsLower.includes(skillName.toLowerCase().trim());
+    
+    if (hasSkill) {
+      // Find and remove just ONE instance of the skill (in case they bought it multiple times)
+      const index = charSkillsLower.findIndex(s => s === skillName.toLowerCase().trim());
+      const newSkills = [...charSkills];
+      newSkills.splice(index, 1);
+      onUpdateSkills(newSkills);
+      showToast(`Removed ${skillName}`);
+    } else {
+      // Add the skill
+      onUpdateSkills([...charSkills, skillName]);
+      showToast(`Added ${skillName}`);
+    }
+  };
+
+  const filtered = allSkills.filter(s => 
+    s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    (s.skillList && s.skillList.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (s.skillType && s.skillType.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  // Sort logic: Acquired skills rise to the top, otherwise alphabetical
+  filtered.sort((a, b) => {
+    const aHas = charSkillsLower.includes(a.name.toLowerCase().trim());
+    const bHas = charSkillsLower.includes(b.name.toLowerCase().trim());
+    if (aHas && !bHas) return -1;
+    if (!aHas && bHas) return 1;
+    return a.name.localeCompare(b.name);
+  });
+
+  return (
+    <div className="p-6 md:p-8 max-w-6xl mx-auto min-h-full flex flex-col h-full">
+      <div className="flex flex-col md:flex-row justify-between md:items-end mb-6 pb-4 border-b-2 border-slate-200 gap-4">
+        <div>
+          <h2 className="text-2xl font-black text-slate-900">Skill Tree</h2>
+          <p className="text-sm font-medium text-slate-500 mt-1">
+            {selectedChar 
+              ? `Browsing abilities for ${selectedChar.basicInfo.characterName}` 
+              : 'Browse and search available abilities and requirements.'}
+          </p>
+        </div>
+        <input 
+          type="text" 
+          placeholder="Search skills, classes, or types..." 
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="border border-slate-300 rounded-md px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none min-w-[250px] shadow-sm"
+        />
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center text-slate-400 p-6 text-center">
+          <p className="text-lg font-bold text-slate-500">No Skills Found</p>
+          <p className="text-sm mt-1">Try adjusting your search term.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-12 overflow-y-auto custom-scrollbar">
+          {filtered.map((skill, idx) => {
+            const isAcquired = charSkillsLower.includes(skill.name.toLowerCase().trim());
+            
+            return (
+              <div key={idx} className={`rounded-xl shadow-sm border p-5 flex flex-col transition-colors ${isAcquired ? 'bg-amber-50 border-amber-300' : 'bg-white border-slate-200 hover:border-indigo-300'}`}>
+                <div className="flex justify-between items-start mb-2 gap-3">
+                  <h3 className={`text-lg font-bold leading-tight ${isAcquired ? 'text-amber-900' : 'text-indigo-900'}`}>{skill.name}</h3>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={`${isAcquired ? 'bg-amber-200 text-amber-900' : 'bg-indigo-100 text-indigo-800'} text-xs font-black px-2 py-1 rounded-md shrink-0`}>Cost: {skill.buildCost}</span>
+                    <button 
+                      onClick={() => handleToggleSkill(skill.name)}
+                      className={`p-1.5 rounded-md flex items-center justify-center transition-all shadow-sm ${isAcquired ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-emerald-500 text-white hover:bg-emerald-600'}`}
+                      title={isAcquired ? 'Remove Skill' : 'Add Skill'}
+                    >
+                      {isAcquired ? <Icons.Minus /> : <Icons.Plus />}
+                    </button>
+                  </div>
+                </div>
+                <div className={`text-xs font-semibold uppercase tracking-wider mb-4 flex flex-wrap gap-x-3 gap-y-1 ${isAcquired ? 'text-amber-700' : 'text-slate-500'}`}>
+                  <span>List: <span className={isAcquired ? 'text-amber-900' : 'text-slate-700'}>{skill.skillList}</span></span>
+                  <span className="opacity-50">•</span>
+                  <span>Type: <span className={isAcquired ? 'text-amber-900' : 'text-slate-700'}>{skill.skillType}</span></span>
+                </div>
+                
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <span className={`border text-xs px-2 py-1 rounded ${isAcquired ? 'bg-amber-100 border-amber-200 text-amber-800' : 'bg-slate-100 border-slate-200 text-slate-600'}`}>Purchase: {skill.purchase}</span>
+                  <span className={`border text-xs px-2 py-1 rounded ${isAcquired ? 'bg-amber-100 border-amber-200 text-amber-800' : 'bg-slate-100 border-slate-200 text-slate-600'}`}>Tagged: {skill.tagged}</span>
+                  <span className={`border text-xs px-2 py-1 rounded ${isAcquired ? 'bg-amber-100 border-amber-200 text-amber-800' : 'bg-slate-100 border-slate-200 text-slate-600'}`}>Duration: {skill.duration}</span>
+                </div>
+
+                {skill.prerequisites && skill.prerequisites !== "None" && (
+                  <div className={`border text-sm px-3 py-2 rounded-md mb-4 font-medium flex gap-2 items-center ${isAcquired ? 'bg-amber-200 border-amber-300 text-amber-900' : 'bg-orange-50 border-orange-200 text-orange-800'}`}>
+                    <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    Requires: {skill.prerequisites}
+                  </div>
+                )}
+
+                <div className={`text-sm whitespace-pre-wrap leading-relaxed flex-1 ${isAcquired ? 'text-amber-900' : 'text-slate-700'}`}>
+                  {skill.description}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function App() {
+  const [activeView, setActiveView] = useState('roster');
   const [characters, setCharacters] = useState(INITIAL_CHARACTERS);
+  const [skillTreeData, setSkillTreeData] = useState([]);
   const [selectedId, setSelectedId] = useState(INITIAL_CHARACTERS[0].id);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [toast, setToast] = useState({ message: '', type: 'success' });
   const fileInputRef = useRef(null);
 
-  // Restore the auto-loading of the characters folder
   useEffect(() => {
     const loadCharacters = async () => {
       try {
         const loaded = [];
         const characterFiles = import.meta.glob('./characters/*.json');
-        
         for (const path in characterFiles) {
           const mod = await characterFiles[path]();
           loaded.push(normalizeCharacter(mod.default));
         }
-        
         if (loaded.length > 0) {
           setCharacters(loaded);
           setSelectedId(loaded[0].id);
         }
-      } catch (e) {
-        console.error("Error loading local characters", e);
-      }
+      } catch (e) { console.error("Error loading local characters", e); }
     };
+
+    const loadSkills = async () => {
+      try {
+        const skillFiles = import.meta.glob('./skills.json');
+        for (const path in skillFiles) {
+          const mod = await skillFiles[path]();
+          setSkillTreeData(mod.default);
+        }
+      } catch (e) { console.error("Error loading skills.json", e); }
+    };
+
     loadCharacters();
+    loadSkills();
   }, []);
 
   const showToast = useCallback((message, type = 'success') => {
@@ -272,6 +387,7 @@ export default function App() {
     };
     setCharacters([...characters, newChar]);
     setSelectedId(newChar.id);
+    setActiveView('roster');
     if (!isSidebarOpen) setIsSidebarOpen(true);
     showToast('New character created.');
   };
@@ -323,10 +439,10 @@ export default function App() {
         }
 
         if(charsToAdd.length > 0) {
-          // Generate completely new unique IDs so we don't accidentally overwrite existing characters
           const newChars = charsToAdd.map(c => ({...c, id: `imported-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`}));
           setCharacters(prev => [...prev, ...newChars]);
           setSelectedId(newChars[0].id);
+          setActiveView('roster');
           showToast(`Imported ${newChars.length} character(s) successfully.`);
         } else {
           showToast('Invalid JSON structure.', 'error');
@@ -348,7 +464,7 @@ export default function App() {
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
               className="p-2 bg-slate-800 hover:bg-slate-700 rounded-md transition-colors text-slate-300 hover:text-white" 
-              title="Toggle Roster Sidebar"
+              title="Toggle Sidebar"
             >
               <Icons.Menu />
             </button>
@@ -356,7 +472,7 @@ export default function App() {
               <Icons.Save />
             </div>
             <div>
-              <h1 className="text-xl font-extrabold tracking-wide leading-none">LAIRE</h1>
+              <h1 className="text-xl font-extrabold tracking-wide leading-none cursor-pointer" onClick={() => setActiveView('roster')}>LAIRE</h1>
               <span className="text-xs text-indigo-300 font-medium tracking-widest uppercase">Character Editor : Send feedback to @Weird_Skeleton on discord!</span>
             </div>
           </div>
@@ -375,10 +491,27 @@ export default function App() {
       {/* Main Content Area */}
       <div className="flex flex-1 overflow-hidden max-w-7xl w-full mx-auto p-4">
         
-        {/* Sidebar Roster Wrapper */}
+        {/* Sidebar Wrapper */}
         <div className={`transition-all duration-300 ease-in-out flex-shrink-0 h-full overflow-hidden ${isSidebarOpen ? 'w-full md:w-1/3 lg:w-1/4 max-w-xs mr-6 opacity-100' : 'w-0 opacity-0'}`}>
           <aside className="w-full min-w-[280px] h-full flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="px-4 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center z-10">
+            
+            {/* View Navigation Tabs */}
+            <div className="flex p-2 bg-slate-100 border-b border-slate-200 gap-2 shrink-0">
+              <button 
+                onClick={() => setActiveView('roster')} 
+                className={`flex-1 py-2 px-2 text-sm font-bold rounded flex items-center justify-center gap-2 transition-colors ${activeView === 'roster' ? 'bg-white shadow-sm text-indigo-700 border border-slate-200' : 'text-slate-500 hover:bg-slate-200 hover:text-slate-800'}`}
+              >
+                <Icons.Users /> Editor
+              </button>
+              <button 
+                onClick={() => setActiveView('skillTree')} 
+                className={`flex-1 py-2 px-2 text-sm font-bold rounded flex items-center justify-center gap-2 transition-colors ${activeView === 'skillTree' ? 'bg-white shadow-sm text-indigo-700 border border-slate-200' : 'text-slate-500 hover:bg-slate-200 hover:text-slate-800'}`}
+              >
+                <Icons.Tree /> Skill Tree
+              </button>
+            </div>
+
+            <div className="px-4 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center z-10 shrink-0">
               <h2 className="font-bold text-slate-700 text-lg flex items-center gap-2">
                 Roster <span className="bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full text-xs">{characters.length}</span>
               </h2>
@@ -386,13 +519,14 @@ export default function App() {
                 <Icons.Plus />
               </button>
             </div>
+            
             <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
               {characters.map(char => {
                 const isSelected = selectedId === char.id;
                 return (
                   <div 
                     key={char.id} 
-                    onClick={() => setSelectedId(char.id)}
+                    onClick={() => { setSelectedId(char.id); }}
                     className={`p-3 rounded-lg border cursor-pointer transition-all flex justify-between items-center group
                       ${isSelected 
                         ? 'bg-indigo-50 border-indigo-200 shadow-sm' 
@@ -408,7 +542,7 @@ export default function App() {
                     </div>
                     <button 
                       onClick={(e) => { e.stopPropagation(); handleDeleteCharacter(char.id, char.basicInfo.characterName); }}
-                      className={`text-slate-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-md transition-all ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                      className={`text-slate-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-md transition-all ${isSelected && activeView === 'roster' ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
                       title="Delete Character"
                     >
                       <Icons.Trash />
@@ -426,9 +560,16 @@ export default function App() {
           </aside>
         </div>
 
-        {/* Editing Pane */}
+        {/* Dynamic Main Pane */}
         <main className="flex-1 overflow-y-auto bg-slate-50 rounded-xl relative custom-scrollbar border border-slate-200 shadow-sm">
-          {!selectedChar ? (
+          {activeView === 'skillTree' ? (
+             <SkillTreeViewer 
+                allSkills={skillTreeData} 
+                selectedChar={selectedChar}
+                onUpdateSkills={(newSkills) => handleUpdateCharacter({ ...selectedChar, skills: newSkills })}
+                showToast={showToast}
+             />
+          ) : !selectedChar ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 p-6 text-center">
               <div className="bg-slate-200/50 p-4 rounded-full mb-4">
                 <svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
