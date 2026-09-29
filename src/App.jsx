@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 
 const INITIAL_CHARACTERS = [
   {
@@ -54,7 +54,9 @@ const Icons = {
   Save: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>,
   Menu: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>,
   Tree: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="22" x2="12" y2="13"></line><line x1="12" y1="13" x2="12" y2="8"></line><line x1="12" y1="13" x2="17" y2="13"></line><line x1="17" y1="13" x2="17" y2="16"></line><line x1="12" y1="8" x2="7" y2="8"></line><line x1="7" y1="8" x2="7" y2="5"></line><line x1="12" y1="8" x2="17" y2="8"></line><line x1="17" y1="8" x2="17" y2="5"></line><line x1="7" y1="8" x2="7" y2="11"></line><circle cx="12" cy="22" r="1"></circle></svg>,
-  Users: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+  Users: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>,
+  List: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>,
+  Grid: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
 };
 
 const Toast = ({ message, type, onClose }) => {
@@ -89,6 +91,105 @@ const normalizeCharacter = (data) => {
     skills: Array.isArray(data.Skills) ? data.Skills : (data.Skills ? data.Skills.split('\n') : [])
   };
 };
+
+// --- Custom Pan & Zoom Canvas Container ---
+const PanZoomCanvas = ({ children, onBgClick, controls }) => {
+  const containerRef = useRef(null);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [scale, setScale] = useState(0.8);
+  const isDragging = useRef(false);
+  const lastMouse = useRef({ x: 0, y: 0 });
+  const dragDistance = useRef(0);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      setPan({ x: containerRef.current.clientWidth / 2, y: containerRef.current.clientHeight / 2 });
+    }
+  }, []);
+
+  const handlePointerDown = (e) => {
+    if (e.button !== 0) return; 
+    isDragging.current = true;
+    dragDistance.current = 0;
+    lastMouse.current = { x: e.clientX, y: e.clientY };
+  };
+
+  const handlePointerMove = (e) => {
+    if (!isDragging.current) return;
+    const dx = e.clientX - lastMouse.current.x;
+    const dy = e.clientY - lastMouse.current.y;
+    dragDistance.current += Math.abs(dx) + Math.abs(dy);
+    lastMouse.current = { x: e.clientX, y: e.clientY };
+    setPan(p => ({ x: p.x + dx, y: p.y + dy }));
+  };
+
+  const handlePointerUp = (e) => {
+    isDragging.current = false;
+    if (dragDistance.current < 5 && onBgClick) {
+      onBgClick();
+    }
+  };
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const handleWheel = (e) => {
+      e.preventDefault();
+      const zoomSensitivity = 0.002;
+      const delta = -e.deltaY * zoomSensitivity;
+      setScale(currentScale => {
+        const scaleAdjust = Math.exp(delta);
+        const newScale = Math.min(Math.max(0.1, currentScale * scaleAdjust), 3);
+        const actualAdjust = newScale / currentScale;
+        const rect = container.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        setPan(p => ({
+          x: mouseX - (mouseX - p.x) * actualAdjust,
+          y: mouseY - (mouseY - p.y) * actualAdjust
+        }));
+        return newScale;
+      });
+    };
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => container.removeEventListener('wheel', handleWheel);
+  }, []);
+
+  return (
+    <div 
+      ref={containerRef}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      className="relative w-full h-full overflow-hidden bg-slate-900 cursor-grab active:cursor-grabbing rounded-lg border border-slate-700 shadow-inner"
+    >
+      <div 
+        className="absolute top-0 left-0 w-full h-full origin-top-left will-change-transform pointer-events-none"
+        style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})` }}
+      >
+        <div className="relative w-full h-full pointer-events-auto">
+          {children}
+        </div>
+      </div>
+      
+      {/* Zoom and Category Controls Overlay */}
+      <div 
+        className="absolute bottom-6 right-6 flex items-end gap-4 z-50 cursor-default" 
+        onPointerDown={e => e.stopPropagation()} 
+        onClick={e => e.stopPropagation()}
+      >
+         {controls}
+         <div className="flex flex-col gap-2">
+           <button onClick={() => setScale(s => Math.min(s * 1.3, 3))} className="bg-slate-800 text-slate-300 hover:text-white p-2 rounded-full shadow-lg border border-slate-600 transition-colors" title="Zoom In"><Icons.Plus /></button>
+           <button onClick={() => setScale(s => Math.max(s / 1.3, 0.1))} className="bg-slate-800 text-slate-300 hover:text-white p-2 rounded-full shadow-lg border border-slate-600 transition-colors" title="Zoom Out"><Icons.Minus /></button>
+         </div>
+      </div>
+    </div>
+  );
+};
+
+// --- Viewers & Editors ---
 
 const DictionaryEditor = ({ title, data, onChange }) => {
   const entries = Object.entries(data);
@@ -199,10 +300,52 @@ const SkillsEditor = ({ skills, onChange }) => {
   );
 };
 
-const SkillTreeViewer = ({ allSkills, selectedChar, onUpdateSkills, showToast }) => {
-  const [searchTerm, setSearchTerm] = useState('');
+const SkillCard = ({ skill, isAcquired, handleToggleSkill }) => (
+  <div className={`w-80 rounded-xl shadow-2xl border-2 p-5 flex flex-col transition-colors cursor-default ${isAcquired ? 'bg-amber-50 border-amber-400' : 'bg-white border-slate-300'}`}>
+    <div className="flex justify-between items-start mb-2 gap-3">
+      <h3 className={`text-lg font-bold leading-tight ${isAcquired ? 'text-amber-900' : 'text-slate-900'}`}>{skill.name}</h3>
+      <div className="flex items-center gap-2 shrink-0">
+        <span className={`${isAcquired ? 'bg-amber-200 text-amber-900' : 'bg-slate-200 text-slate-800'} text-xs font-black px-2 py-1 rounded-md shrink-0`}>Cost: {skill.buildCost}</span>
+        <button 
+          onClick={(e) => { e.stopPropagation(); handleToggleSkill(skill.name); }}
+          className={`p-1.5 rounded-md flex items-center justify-center transition-all shadow-sm ${isAcquired ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-emerald-500 text-white hover:bg-emerald-600'}`}
+          title={isAcquired ? 'Remove Skill' : 'Add Skill'}
+        >
+          {isAcquired ? <Icons.Minus /> : <Icons.Plus />}
+        </button>
+      </div>
+    </div>
+    <div className={`text-xs font-semibold uppercase tracking-wider mb-4 flex flex-wrap gap-x-3 gap-y-1 ${isAcquired ? 'text-amber-700' : 'text-slate-500'}`}>
+      <span>List: <span className={isAcquired ? 'text-amber-900' : 'text-slate-700'}>{skill.skillList}</span></span>
+      <span className="opacity-50">•</span>
+      <span>Type: <span className={isAcquired ? 'text-amber-900' : 'text-slate-700'}>{skill.skillType}</span></span>
+    </div>
+    
+    <div className="flex flex-wrap gap-2 mb-4">
+      <span className={`border text-xs px-2 py-1 rounded font-medium ${isAcquired ? 'bg-amber-100 border-amber-200 text-amber-800' : 'bg-slate-100 border-slate-200 text-slate-600'}`}>Purchase: {skill.purchase}</span>
+      <span className={`border text-xs px-2 py-1 rounded font-medium ${isAcquired ? 'bg-amber-100 border-amber-200 text-amber-800' : 'bg-slate-100 border-slate-200 text-slate-600'}`}>Tagged: {skill.tagged}</span>
+      <span className={`border text-xs px-2 py-1 rounded font-medium ${isAcquired ? 'bg-amber-100 border-amber-200 text-amber-800' : 'bg-slate-100 border-slate-200 text-slate-600'}`}>Duration: {skill.duration}</span>
+    </div>
 
-  // Extract the current character's skills into a lowercase array for easy matching
+    {skill.prerequisites && skill.prerequisites !== "None" && (
+      <div className={`border text-sm px-3 py-2 rounded-md mb-4 font-medium flex gap-2 items-center ${isAcquired ? 'bg-amber-200 border-amber-300 text-amber-900' : 'bg-slate-100 border-slate-300 text-slate-800'}`}>
+        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        Requires: {skill.prerequisites}
+      </div>
+    )}
+
+    <div className={`text-sm whitespace-pre-wrap leading-relaxed flex-1 overflow-y-auto max-h-64 custom-scrollbar ${isAcquired ? 'text-amber-900' : 'text-slate-700'}`}>
+      {skill.description}
+    </div>
+  </div>
+);
+
+const AllSkillsViewer = ({ allSkills, selectedChar, onUpdateSkills, showToast }) => {
+  const [viewMode, setViewMode] = useState('list'); 
+  const [treeCategory, setTreeCategory] = useState('Martial');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [expandedNode, setExpandedNode] = useState(null);
+
   const charSkills = selectedChar ? (Array.isArray(selectedChar.skills) ? selectedChar.skills : []) : [];
   const charSkillsLower = charSkills.map(s => typeof s === 'string' ? s.toLowerCase().trim() : '');
 
@@ -211,108 +354,243 @@ const SkillTreeViewer = ({ allSkills, selectedChar, onUpdateSkills, showToast })
       showToast('Please select a character from the roster first.', 'error');
       return;
     }
-    
     const hasSkill = charSkillsLower.includes(skillName.toLowerCase().trim());
-    
     if (hasSkill) {
-      // Find and remove just ONE instance of the skill (in case they bought it multiple times)
       const index = charSkillsLower.findIndex(s => s === skillName.toLowerCase().trim());
       const newSkills = [...charSkills];
       newSkills.splice(index, 1);
       onUpdateSkills(newSkills);
       showToast(`Removed ${skillName}`);
     } else {
-      // Add the skill
       onUpdateSkills([...charSkills, skillName]);
       showToast(`Added ${skillName}`);
     }
   };
 
-  const filtered = allSkills.filter(s => 
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    (s.skillList && s.skillList.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (s.skillType && s.skillType.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // === Degree-Based Radial Layout Algorithm ===
+  const treeData = useMemo(() => {
+    // 1. Filter skills to only show the selected category (e.g. Martial, Arcane)
+    const categorySkills = allSkills.filter(s => {
+       const typeStr = (s.skillType || "").toLowerCase();
+       if (treeCategory === 'Miscellaneous') {
+           // Fallback for skills that don't match the primary 3 combat types
+           return typeStr.includes('miscellaneous') || (!typeStr.includes('martial') && !typeStr.includes('arcane') && !typeStr.includes('dexterity'));
+       }
+       return typeStr.includes(treeCategory.toLowerCase());
+    });
 
-  // Sort logic: Acquired skills rise to the top, otherwise alphabetical
-  filtered.sort((a, b) => {
-    const aHas = charSkillsLower.includes(a.name.toLowerCase().trim());
-    const bHas = charSkillsLower.includes(b.name.toLowerCase().trim());
-    if (aHas && !bHas) return -1;
-    if (!aHas && bHas) return 1;
-    return a.name.localeCompare(b.name);
-  });
+    if (categorySkills.length === 0) return { nodes: [], edges: [] };
+
+    const skillMap = new Map();
+    categorySkills.forEach(s => skillMap.set(s.name, { ...s, children: [], parents: [], degree: 0 }));
+
+    // Connect Prerequisites (only maps connections within the same category to keep the tree clean)
+    const sortedNames = categorySkills.map(s => s.name).sort((a,b) => b.length - a.length);
+    categorySkills.forEach(skill => {
+      const node = skillMap.get(skill.name);
+      const prereqStr = (skill.prerequisites || "").toLowerCase();
+      if (prereqStr === "none" || !prereqStr) return;
+
+      sortedNames.forEach(parentName => {
+        if (prereqStr.includes(parentName.toLowerCase())) {
+          const parentNode = skillMap.get(parentName);
+          if (parentNode && !parentNode.children.includes(skill.name)) {
+            parentNode.children.push(skill.name);
+            node.parents.push(parentName);
+          }
+        }
+      });
+    });
+
+    // Calculate Total Connectivity (Degree)
+    const nodesList = Array.from(skillMap.values());
+    nodesList.forEach(node => {
+      node.degree = node.parents.length + node.children.length;
+    });
+
+    // Sort by most connected -> least connected
+    nodesList.sort((a, b) => b.degree - a.degree);
+
+    // Lay out in Concentric Rings
+    let ringIndex = 0;
+    let nodesInCurrentRing = 1;
+    let ringCount = 0;
+    const RADIAL_SPACING = 300; 
+    const MIN_ARC_LENGTH = 250; 
+
+    const finalNodes = [];
+    const finalEdges = [];
+
+    nodesList.forEach((node) => {
+      if (ringCount >= nodesInCurrentRing) {
+         ringIndex++;
+         nodesInCurrentRing = Math.max(1, Math.floor((2 * Math.PI * (ringIndex * RADIAL_SPACING)) / MIN_ARC_LENGTH));
+         ringCount = 0;
+      }
+
+      const radius = ringIndex === 0 ? 0 : ringIndex * RADIAL_SPACING;
+      const angle = ringIndex === 0 ? 0 : (ringCount / nodesInCurrentRing) * 2 * Math.PI;
+
+      node.x = radius * Math.cos(angle);
+      node.y = radius * Math.sin(angle);
+      
+      finalNodes.push(node);
+      ringCount++;
+    });
+
+    // Connect Lines
+    nodesList.forEach(node => {
+       node.children.forEach(childName => {
+         const childNode = skillMap.get(childName);
+         if (childNode) {
+           finalEdges.push({ source: node, target: childNode });
+         }
+      });
+    });
+
+    return { nodes: finalNodes, edges: finalEdges };
+  }, [allSkills, treeCategory]);
 
   return (
-    <div className="p-6 md:p-8 max-w-6xl mx-auto min-h-full flex flex-col h-full">
-      <div className="flex flex-col md:flex-row justify-between md:items-end mb-6 pb-4 border-b-2 border-slate-200 gap-4">
+    <div className="flex flex-col h-full bg-white">
+      {/* Top Control Bar */}
+      <div className="flex flex-col md:flex-row justify-between items-center p-6 border-b border-slate-200 gap-4 shrink-0 bg-slate-50">
         <div>
-          <h2 className="text-2xl font-black text-slate-900">Skill Tree</h2>
+          <h2 className="text-2xl font-black text-slate-900">All Skills</h2>
           <p className="text-sm font-medium text-slate-500 mt-1">
-            {selectedChar 
-              ? `Browsing abilities for ${selectedChar.basicInfo.characterName}` 
-              : 'Browse and search available abilities and requirements.'}
+            {selectedChar ? `Browsing abilities for ${selectedChar.basicInfo.characterName}` : 'Browse and search available abilities.'}
           </p>
         </div>
-        <input 
-          type="text" 
-          placeholder="Search skills, classes, or types..." 
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="border border-slate-300 rounded-md px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none min-w-[250px] shadow-sm"
-        />
+        
+        <div className="flex items-center gap-4">
+           <div className="flex bg-slate-200 p-1 rounded-md border border-slate-300">
+              <button 
+                onClick={() => setViewMode('list')} 
+                className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-bold transition-colors ${viewMode === 'list' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+              >
+                <Icons.Grid /> List
+              </button>
+              <button 
+                onClick={() => setViewMode('tree')} 
+                className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-bold transition-colors ${viewMode === 'tree' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+              >
+                <Icons.Tree /> Tree
+              </button>
+           </div>
+
+           <input 
+             type="text" 
+             placeholder="Search skills..." 
+             value={searchTerm}
+             onChange={(e) => setSearchTerm(e.target.value)}
+             className="border border-slate-300 rounded-md px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none w-48 shadow-sm"
+           />
+        </div>
       </div>
 
-      {filtered.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center text-slate-400 p-6 text-center">
-          <p className="text-lg font-bold text-slate-500">No Skills Found</p>
-          <p className="text-sm mt-1">Try adjusting your search term.</p>
+      {viewMode === 'list' ? (
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+          {allSkills.length === 0 ? (
+            <div className="flex flex-col items-center justify-center text-slate-400 p-6 text-center h-full">
+              <p className="text-lg font-bold text-slate-500">No Skills Found</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-12">
+              {allSkills
+                .filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()) || (s.skillList && s.skillList.toLowerCase().includes(searchTerm.toLowerCase())))
+                .sort((a, b) => {
+                  const aHas = charSkillsLower.includes(a.name.toLowerCase().trim());
+                  const bHas = charSkillsLower.includes(b.name.toLowerCase().trim());
+                  if (aHas && !bHas) return -1;
+                  if (!aHas && bHas) return 1;
+                  return a.name.localeCompare(b.name);
+                })
+                .map((skill, idx) => (
+                <div key={idx} className="flex justify-center">
+                  <SkillCard skill={skill} isAcquired={charSkillsLower.includes(skill.name.toLowerCase().trim())} handleToggleSkill={handleToggleSkill} />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-12 overflow-y-auto custom-scrollbar">
-          {filtered.map((skill, idx) => {
-            const isAcquired = charSkillsLower.includes(skill.name.toLowerCase().trim());
-            
-            return (
-              <div key={idx} className={`rounded-xl shadow-sm border p-5 flex flex-col transition-colors ${isAcquired ? 'bg-amber-50 border-amber-300' : 'bg-white border-slate-200 hover:border-indigo-300'}`}>
-                <div className="flex justify-between items-start mb-2 gap-3">
-                  <h3 className={`text-lg font-bold leading-tight ${isAcquired ? 'text-amber-900' : 'text-indigo-900'}`}>{skill.name}</h3>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className={`${isAcquired ? 'bg-amber-200 text-amber-900' : 'bg-indigo-100 text-indigo-800'} text-xs font-black px-2 py-1 rounded-md shrink-0`}>Cost: {skill.buildCost}</span>
-                    <button 
-                      onClick={() => handleToggleSkill(skill.name)}
-                      className={`p-1.5 rounded-md flex items-center justify-center transition-all shadow-sm ${isAcquired ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-emerald-500 text-white hover:bg-emerald-600'}`}
-                      title={isAcquired ? 'Remove Skill' : 'Add Skill'}
-                    >
-                      {isAcquired ? <Icons.Minus /> : <Icons.Plus />}
-                    </button>
-                  </div>
-                </div>
-                <div className={`text-xs font-semibold uppercase tracking-wider mb-4 flex flex-wrap gap-x-3 gap-y-1 ${isAcquired ? 'text-amber-700' : 'text-slate-500'}`}>
-                  <span>List: <span className={isAcquired ? 'text-amber-900' : 'text-slate-700'}>{skill.skillList}</span></span>
-                  <span className="opacity-50">•</span>
-                  <span>Type: <span className={isAcquired ? 'text-amber-900' : 'text-slate-700'}>{skill.skillType}</span></span>
-                </div>
-                
-                <div className="flex flex-wrap gap-2 mb-4">
-                  <span className={`border text-xs px-2 py-1 rounded ${isAcquired ? 'bg-amber-100 border-amber-200 text-amber-800' : 'bg-slate-100 border-slate-200 text-slate-600'}`}>Purchase: {skill.purchase}</span>
-                  <span className={`border text-xs px-2 py-1 rounded ${isAcquired ? 'bg-amber-100 border-amber-200 text-amber-800' : 'bg-slate-100 border-slate-200 text-slate-600'}`}>Tagged: {skill.tagged}</span>
-                  <span className={`border text-xs px-2 py-1 rounded ${isAcquired ? 'bg-amber-100 border-amber-200 text-amber-800' : 'bg-slate-100 border-slate-200 text-slate-600'}`}>Duration: {skill.duration}</span>
-                </div>
-
-                {skill.prerequisites && skill.prerequisites !== "None" && (
-                  <div className={`border text-sm px-3 py-2 rounded-md mb-4 font-medium flex gap-2 items-center ${isAcquired ? 'bg-amber-200 border-amber-300 text-amber-900' : 'bg-orange-50 border-orange-200 text-orange-800'}`}>
-                    <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                    Requires: {skill.prerequisites}
-                  </div>
-                )}
-
-                <div className={`text-sm whitespace-pre-wrap leading-relaxed flex-1 ${isAcquired ? 'text-amber-900' : 'text-slate-700'}`}>
-                  {skill.description}
-                </div>
+        <div className="flex-1 relative w-full h-full p-2">
+          <PanZoomCanvas 
+            onBgClick={() => setExpandedNode(null)}
+            controls={
+              <div className="flex bg-slate-800 p-1.5 rounded-lg border border-slate-600 shadow-lg gap-1 pointer-events-auto">
+                 {['Martial', 'Arcane', 'Dexterity', 'Miscellaneous'].map(cat => (
+                     <button 
+                         key={cat}
+                         onClick={() => { setTreeCategory(cat); setExpandedNode(null); }}
+                         className={`px-4 py-2 text-sm font-bold rounded-md transition-colors ${treeCategory === cat ? 'bg-indigo-500 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`}
+                     >
+                         {cat}
+                     </button>
+                 ))}
               </div>
-            );
-          })}
+            }
+          >
+            
+            {/* Edges Layer */}
+            <svg className="absolute top-0 left-0 w-full h-full overflow-visible pointer-events-none z-0">
+               {treeData.edges.map((edge, idx) => (
+                  <line 
+                    key={idx} 
+                    x1={edge.source.x} y1={edge.source.y} 
+                    x2={edge.target.x} y2={edge.target.y} 
+                    stroke="rgba(148, 163, 184, 0.4)" 
+                    strokeWidth="1.5" 
+                  />
+               ))}
+            </svg>
+
+            {/* Nodes Layer */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-visible z-10">
+               {treeData.nodes.map(node => {
+                 const isAcquired = charSkillsLower.includes(node.name.toLowerCase().trim());
+                 const isExpanded = expandedNode === node.name;
+                 const isSearched = searchTerm && node.name.toLowerCase().includes(searchTerm.toLowerCase());
+
+                 return (
+                   <div 
+                     key={node.name}
+                     style={{ transform: `translate(calc(${node.x}px - 50%), calc(${node.y}px - 50%))` }}
+                     className={`absolute ${isExpanded ? 'z-50' : 'z-10'}`}
+                   >
+                     {isExpanded ? (
+                        <div 
+                          className="relative"
+                          onPointerDown={(e) => e.stopPropagation()} 
+                          onClick={(e) => e.stopPropagation()} 
+                        >
+                           <SkillCard skill={node} isAcquired={isAcquired} handleToggleSkill={handleToggleSkill} />
+                           <button 
+                             onClick={() => setExpandedNode(null)} 
+                             className="absolute -top-3 -right-3 bg-slate-800 text-white rounded-full p-1.5 shadow-md hover:bg-red-600 transition-colors"
+                             title="Close"
+                           >
+                              <Icons.Plus style={{ transform: 'rotate(45deg)' }} />
+                           </button>
+                        </div>
+                     ) : (
+                        <div 
+                           onPointerDown={(e) => e.stopPropagation()}
+                           onClick={(e) => { e.stopPropagation(); setExpandedNode(node.name); }}
+                           className={`
+                             px-4 py-2 rounded-full cursor-pointer shadow-md font-bold text-sm whitespace-nowrap border-2 transition-transform hover:scale-110 pointer-events-auto
+                             ${isAcquired ? 'bg-amber-300 border-amber-500 text-amber-900' : 'bg-slate-800 border-slate-600 text-slate-200'}
+                             ${isSearched ? 'ring-4 ring-indigo-500 ring-offset-2 ring-offset-slate-900' : ''}
+                           `}
+                        >
+                           {node.name}
+                        </div>
+                     )}
+                   </div>
+                 );
+               })}
+            </div>
+          </PanZoomCanvas>
         </div>
       )}
     </div>
@@ -457,7 +735,6 @@ export default function App() {
 
   return (
     <div className="h-screen bg-slate-100 text-slate-800 font-sans flex flex-col overflow-hidden selection:bg-indigo-100 selection:text-indigo-900">
-      {/* App Header */}
       <header className="bg-slate-900 text-white shadow-md flex-shrink-0 z-20">
         <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-3">
@@ -481,21 +758,18 @@ export default function App() {
             <button onClick={() => fileInputRef.current.click()} className="flex items-center gap-2 bg-slate-800 border border-slate-700 hover:bg-slate-700 px-4 py-2 rounded-md text-sm font-semibold transition-colors shadow-sm">
               <Icons.Upload /> Import JSON
             </button>
-            <button onClick={exportAll} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 border border-emerald-500 px-4 py-2 rounded-md text-sm font-semibold transition-colors shadow-sm">
+            <button onClick={exportAll} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-50 border border-emerald-500 px-4 py-2 rounded-md text-sm font-semibold transition-colors shadow-sm">
               <Icons.Download /> Save Roster (JSON)
             </button>
           </div>
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <div className="flex flex-1 overflow-hidden max-w-7xl w-full mx-auto p-4">
+      <div className="flex flex-1 overflow-hidden max-w-[1400px] w-full mx-auto p-4">
         
-        {/* Sidebar Wrapper */}
         <div className={`transition-all duration-300 ease-in-out flex-shrink-0 h-full overflow-hidden ${isSidebarOpen ? 'w-full md:w-1/3 lg:w-1/4 max-w-xs mr-6 opacity-100' : 'w-0 opacity-0'}`}>
           <aside className="w-full min-w-[280px] h-full flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
             
-            {/* View Navigation Tabs */}
             <div className="flex p-2 bg-slate-100 border-b border-slate-200 gap-2 shrink-0">
               <button 
                 onClick={() => setActiveView('roster')} 
@@ -504,10 +778,10 @@ export default function App() {
                 <Icons.Users /> Editor
               </button>
               <button 
-                onClick={() => setActiveView('skillTree')} 
-                className={`flex-1 py-2 px-2 text-sm font-bold rounded flex items-center justify-center gap-2 transition-colors ${activeView === 'skillTree' ? 'bg-white shadow-sm text-indigo-700 border border-slate-200' : 'text-slate-500 hover:bg-slate-200 hover:text-slate-800'}`}
+                onClick={() => setActiveView('allSkills')} 
+                className={`flex-1 py-2 px-2 text-sm font-bold rounded flex items-center justify-center gap-2 transition-colors ${activeView === 'allSkills' ? 'bg-white shadow-sm text-indigo-700 border border-slate-200' : 'text-slate-500 hover:bg-slate-200 hover:text-slate-800'}`}
               >
-                <Icons.Tree /> Skill Tree
+                <Icons.List /> All Skills
               </button>
             </div>
 
@@ -560,10 +834,9 @@ export default function App() {
           </aside>
         </div>
 
-        {/* Dynamic Main Pane */}
-        <main className="flex-1 overflow-y-auto bg-slate-50 rounded-xl relative custom-scrollbar border border-slate-200 shadow-sm">
-          {activeView === 'skillTree' ? (
-             <SkillTreeViewer 
+        <main className="flex-1 overflow-y-auto bg-slate-50 rounded-xl relative custom-scrollbar border border-slate-200 shadow-sm flex flex-col">
+          {activeView === 'allSkills' ? (
+             <AllSkillsViewer 
                 allSkills={skillTreeData} 
                 selectedChar={selectedChar}
                 onUpdateSkills={(newSkills) => handleUpdateCharacter({ ...selectedChar, skills: newSkills })}
@@ -578,7 +851,7 @@ export default function App() {
               <p className="text-sm mt-1 max-w-xs">Select a character from the roster on the left, or add a new one to begin editing.</p>
             </div>
           ) : (
-            <div className="p-6 md:p-8 max-w-4xl mx-auto min-h-full">
+            <div className="p-6 md:p-8 max-w-4xl mx-auto min-h-full w-full">
               
               <div className="flex justify-between items-end mb-6 pb-4 border-b-2 border-slate-200">
                  <div>
@@ -591,7 +864,6 @@ export default function App() {
                  </button>
               </div>
 
-              {/* Basic Info Section */}
               <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-5 mb-6">
                 <h3 className="text-lg font-bold text-slate-800 mb-4 pb-3 border-b border-slate-100">Basic Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -616,7 +888,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Dynamic Sections */}
               <DictionaryEditor 
                 title="Experience & Build" 
                 data={selectedChar.experience} 
