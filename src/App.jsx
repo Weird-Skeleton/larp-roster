@@ -66,6 +66,28 @@ const DEMON_HUNTER_SKILLS = [
   'unnatural health'
 ];
 
+// Hardcoded list of Mage skills (including all ranks for schools listed)
+const MAGE_SKILLS = [
+  'mage basic career list',
+  'mage basic career skill list',
+  'power points',
+  'quarterstaff',
+  'small weapon',
+  'read magic',
+  'auras rank 1', 'auras rank 2', 'auras rank 3', 'auras rank 4', 'auras rank 5', 'auras rank 6',
+  'bonds rank 1', 'bonds rank 2', 'bonds rank 3', 'bonds rank 4', 'bonds rank 5', 'bonds rank 6',
+  'charms rank 1', 'charms rank 2', 'charms rank 3', 'charms rank 4', 'charms rank 5', 'charms rank 6',
+  'death rank 1', 'death rank 2', 'death rank 3', 'death rank 4', 'death rank 5', 'death rank 6',
+  'enchantments rank 1', 'enchantments rank 2', 'enchantments rank 3', 'enchantments rank 4', 'enchantments rank 5', 'enchantments rank 6',
+  'healing rank 1', 'healing rank 2', 'healing rank 3', 'healing rank 4', 'healing rank 5', 'healing rank 6',
+  'ice rank 1', 'ice rank 2', 'ice rank 3', 'ice rank 4', 'ice rank 5', 'ice rank 6',
+  'necromancy rank 1', 'necromancy rank 2', 'necromancy rank 3', 'necromancy rank 4', 'necromancy rank 5', 'necromancy rank 6',
+  'pyrotechnics rank 1', 'pyrotechnics rank 2', 'pyrotechnics rank 3', 'pyrotechnics rank 4', 'pyrotechnics rank 5', 'pyrotechnics rank 6',
+  'shadow rank 1', 'shadow rank 2', 'shadow rank 3', 'shadow rank 4', 'shadow rank 5', 'shadow rank 6',
+  'thaumaturgy rank 1', 'thaumaturgy rank 2', 'thaumaturgy rank 3', 'thaumaturgy rank 4', 'thaumaturgy rank 5', 'thaumaturgy rank 6',
+  'demonology rank 1', 'demonology rank 2', 'demonology rank 3', 'demonology rank 4', 'demonology rank 5', 'demonology rank 6'
+];
+
 // SVG Assets dictionary for clean inline rendering
 const Icons = {
   Plus: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>,
@@ -371,6 +393,7 @@ const SkillCard = ({ skill, isAcquired, handleToggleSkill, hasMissingPrereqs }) 
       <span className={`border text-xs px-2 py-1 rounded font-medium ${isAcquired ? 'bg-blue-100 border-blue-200 text-blue-800' : 'bg-slate-100 border-slate-200 text-slate-600'}`}>Duration: {skill.duration}</span>
     </div>
 
+    {/* Conditionally renders an amber warning if prerequisites are missing, or a green check if cleared */}
     {skill.prerequisites && skill.prerequisites !== "None" && (
       <div className={`border text-sm px-3 py-2 rounded-md mb-4 font-medium flex gap-2 items-center ${hasMissingPrereqs ? 'bg-amber-100 border-amber-300 text-amber-900' : 'bg-emerald-50 border-emerald-300 text-emerald-900'}`}>
         {hasMissingPrereqs ? (
@@ -573,12 +596,17 @@ const AllSkillsViewer = ({ allSkills, layoutData, selectedChar, onUpdateSkills, 
        const typeStr = (s.skillType || "").toLowerCase();
        const normalizedName = normalizeSkillName(s.name);
        const isDemonHunterSkill = DEMON_HUNTER_SKILLS.includes(normalizedName);
+       const isMageSkill = MAGE_SKILLS.includes(normalizedName);
 
        if (treeCategory === 'Demon Hunter') {
            return isDemonHunterSkill;
        }
 
-       if (isDemonHunterSkill) {
+       if (treeCategory === 'Mage') {
+           return isMageSkill;
+       }
+
+       if (isDemonHunterSkill || isMageSkill) {
            return false;
        }
 
@@ -622,6 +650,7 @@ const AllSkillsViewer = ({ allSkills, layoutData, selectedChar, onUpdateSkills, 
 
     nodesList.sort((a, b) => b.degree - a.degree);
 
+// 5. Expand outward in concentric rings
     let ringIndex = 0;
     let nodesInCurrentRing = 1;
     let ringCount = 0;
@@ -632,24 +661,29 @@ const AllSkillsViewer = ({ allSkills, layoutData, selectedChar, onUpdateSkills, 
     const finalEdges = [];
 
     nodesList.forEach((node) => {
+      // 1. ALWAYS run the radial math to keep the underlying grid stable
+      if (ringCount >= nodesInCurrentRing) {
+         ringIndex++;
+         nodesInCurrentRing = Math.max(1, Math.floor((2 * Math.PI * (ringIndex * RADIAL_SPACING)) / MIN_ARC_LENGTH));
+         ringCount = 0;
+      }
+
+      const radius = ringIndex === 0 ? 0 : ringIndex * RADIAL_SPACING;
+      const angle = ringIndex === 0 ? 0 : (ringCount / nodesInCurrentRing) * 2 * Math.PI;
+
+      node.x = radius * Math.cos(angle);
+      node.y = radius * Math.sin(angle);
+      
+      // 2. If you manually placed this node, override its coordinates AFTER the math
       if (localLayout[node.name]) {
          node.x = localLayout[node.name].x;
          node.y = localLayout[node.name].y;
-      } else {
-         if (ringCount >= nodesInCurrentRing) {
-            ringIndex++;
-            nodesInCurrentRing = Math.max(1, Math.floor((2 * Math.PI * (ringIndex * RADIAL_SPACING)) / MIN_ARC_LENGTH));
-            ringCount = 0;
-         }
-
-         const radius = ringIndex === 0 ? 0 : ringIndex * RADIAL_SPACING;
-         const angle = ringIndex === 0 ? 0 : (ringCount / nodesInCurrentRing) * 2 * Math.PI;
-
-         node.x = radius * Math.cos(angle);
-         node.y = radius * Math.sin(angle);
-         ringCount++;
       }
+      
       finalNodes.push(node);
+      
+      // 3. ALWAYS increment the ring count so the other nodes don't jump around
+      ringCount++; 
     });
 
     nodesList.forEach(node => {
@@ -773,7 +807,7 @@ const AllSkillsViewer = ({ allSkills, layoutData, selectedChar, onUpdateSkills, 
             onBgClick={() => setExpandedNode(null)}
             controls={
               <div className="flex bg-slate-800 p-1.5 rounded-lg border border-slate-600 shadow-lg gap-1 pointer-events-auto">
-                 {['Martial', 'Arcane', 'Dexterity', 'Miscellaneous', 'Demon Hunter'].map(cat => (
+                 {['Martial', 'Arcane', 'Dexterity', 'Miscellaneous', 'Demon Hunter', 'Mage'].map(cat => (
                      <button 
                          key={cat}
                          onClick={() => { setTreeCategory(cat); setExpandedNode(null); }}
