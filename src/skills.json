@@ -2849,7 +2849,7 @@
     "description": "This skill allows the character to channel a spell they were hit with through their weapon into any target. Once successfully hit with a spell attack, the player must call “Redirect” and then has 5 seconds to channel the spell away from them into their target upon a successful weapon strike.\n\nThe character can redirect a spell augmented by Warlock skills, however the spell loses all of its augmentations and only the base spell is redirected. A character can only redirect a spell if they are wielding their Dedicated Weapon (not just in their hand) at the time. If the character has two Dedicated Weapons, not including a shield, they may redirect two spells.\n\nIf no target is available to redirect the spell into, then the character may redirect the spell into the ground or some other inanimate object. If a character does not ground the spell, after 5 seconds the spell will harmlessly go away.\n\nThe character may parry and redirect a spell for another character that is within weapon’s reach just like other martial parry skills except spells augmented by Perfect Aim.\n\nOnly low magic schools and Nature Magic can be redirected, therefore, Spell Songs, sorcery, and magical abilities cannot be redirected. A character must have two Spell Parry skills per Redirect skill they wish to learn. This skill is always used once called and requires the character’s Dedicated Weapon to use.\n\n***This skill above differs from how it looks in the rulebook due to our current 5th edition playtest. See the playtest docs for more info***"
   },
   {
-    "name": "Release Soul Endowmen",
+    "name": "Release Soul Endowment",
     "buildCost": "1",
     "purchase": "Once",
     "tagged": "No",
