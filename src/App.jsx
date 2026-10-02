@@ -46,27 +46,6 @@ const INITIAL_CHARACTERS = [
   }
 ];
 
-// Hardcoded list of Demon Hunter skills to intercept during tree sorting
-const DEMON_HUNTER_SKILLS = [
-  'bane endowment rank 1',
-  'battle strength endowment rank 1',
-  'break threshold',
-  'clear mind endowment rank 1',
-  'crit demon',
-  'demon lore',
-  'harvest demon flesh',
-  'identify demon',
-  'preserve demon flesh',
-  'protection endowment rank 1',
-  'release soul endowment',
-  'shadow bane endowment rank 1',
-  'slay demon',
-  'stun demon',
-  'track demon',
-  'unnatural health'
-];
-
-// Hardcoded list of Mage skills (including all ranks for schools listed)
 const MAGE_SKILLS = [
   'mage basic career list',
   'mage basic career skill list',
@@ -86,6 +65,78 @@ const MAGE_SKILLS = [
   'shadow rank 1', 'shadow rank 2', 'shadow rank 3', 'shadow rank 4', 'shadow rank 5', 'shadow rank 6',
   'thaumaturgy rank 1', 'thaumaturgy rank 2', 'thaumaturgy rank 3', 'thaumaturgy rank 4', 'thaumaturgy rank 5', 'thaumaturgy rank 6',
   'demonology rank 1', 'demonology rank 2', 'demonology rank 3', 'demonology rank 4', 'demonology rank 5', 'demonology rank 6'
+];
+
+const ROGUE_SKILLS = [
+  'armor skill',
+  'backstab',
+  'blather',
+  'cheap trick',
+  'disarm',
+  'disarm trap',
+  'florentine',
+  'pick lock',
+  'rogue basic career list',
+  'rogue basic career skill list',
+  'set trap rank 1',
+  'set trap rank 2',
+  'set trap rank 3',
+  'set trap rank 4',
+  'side step',
+  'throat punch',
+  'waylay',
+  'bow',
+  'crossbow',
+  'one-handed edge',
+  'small weapon'
+];
+
+const WARRIOR_SKILLS = [
+  'armor proficiency',
+  'armor reset',
+  'armor skill',
+  'cleave',
+  'critical attack',
+  'disarm',
+  'florentine',
+  'morale boost',
+  'shield skill',
+  'stunning blow',
+  'warrior basic career skill list',
+  'warrior basic career list',
+  'weapon proficiency',
+  'bastard blunt',
+  'bastard edge',
+  'bow',
+  'crossbow',
+  'one-handed blunt',
+  'one-handed edge',
+  'polearm',
+  'quarterstaff',
+  'small weapon',
+  'spear',
+  'thrown weapon',
+  'two-handed blunt',
+  'two-handed edge'
+];
+
+const DEMON_HUNTER_SKILLS = [
+  'bane endowment rank 1',
+  'battle strength endowment rank 1',
+  'break threshold',
+  'clear mind endowment rank 1',
+  'crit demon',
+  'demon lore',
+  'harvest demon flesh',
+  'identify demon',
+  'preserve demon flesh',
+  'protection endowment rank 1',
+  'release soul endowment',
+  'shadow bane endowment rank 1',
+  'slay demon',
+  'stun demon',
+  'track demon',
+  'unnatural health'
 ];
 
 // SVG Assets dictionary for clean inline rendering
@@ -160,7 +211,7 @@ const normalizeSkillName = (name) => {
 
 // The canvas component now passes its internal scale value down to its children
 // This allows nodes to calculate exact drag distance regardless of zoom level
-const PanZoomCanvas = ({ children, onBgClick, controls }) => {
+const PanZoomCanvas = ({ children, onBgClick, controls, resetTrigger }) => {
   const containerRef = useRef(null);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(0.8);
@@ -171,8 +222,9 @@ const PanZoomCanvas = ({ children, onBgClick, controls }) => {
   useEffect(() => {
     if (containerRef.current) {
       setPan({ x: containerRef.current.clientWidth / 2, y: containerRef.current.clientHeight / 2 });
+      setScale(0.8);
     }
-  }, []);
+  }, [resetTrigger]);
 
   const handlePointerDown = (e) => {
     if (e.button !== 0) return; 
@@ -491,7 +543,7 @@ const DraggableNode = ({ node, isExpanded, isAcquired, isSearched, isEditMode, s
 
 const AllSkillsViewer = ({ allSkills, layoutData, selectedChar, onUpdateSkills, showToast }) => {
   const [viewMode, setViewMode] = useState('list'); 
-  const [treeCategory, setTreeCategory] = useState('Martial');
+  const [treeCategory, setTreeCategory] = useState('Rogue');
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedNode, setExpandedNode] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -568,11 +620,11 @@ const AllSkillsViewer = ({ allSkills, layoutData, selectedChar, onUpdateSkills, 
   };
 
   const updateNodePosition = useCallback((nodeName, x, y) => {
-    setLocalLayout(prev => ({
-      ...prev,
-      [nodeName]: { x, y }
-    }));
-  }, []);
+      setLocalLayout(prev => ({
+        ...prev,
+        [`${treeCategory}_${nodeName}`]: { x, y }
+      }));
+    }, [treeCategory]);
 
   const exportLayout = () => {
     try {
@@ -592,11 +644,12 @@ const AllSkillsViewer = ({ allSkills, layoutData, selectedChar, onUpdateSkills, 
   };
 
   const treeData = useMemo(() => {
-    const categorySkills = allSkills.filter(s => {
-       const typeStr = (s.skillType || "").toLowerCase();
+const categorySkills = allSkills.filter(s => {
        const normalizedName = normalizeSkillName(s.name);
        const isDemonHunterSkill = DEMON_HUNTER_SKILLS.includes(normalizedName);
        const isMageSkill = MAGE_SKILLS.includes(normalizedName);
+       const isRogueSkill = ROGUE_SKILLS.includes(normalizedName);
+       const isWarriorSkill = WARRIOR_SKILLS.includes(normalizedName);
 
        if (treeCategory === 'Demon Hunter') {
            return isDemonHunterSkill;
@@ -605,15 +658,21 @@ const AllSkillsViewer = ({ allSkills, layoutData, selectedChar, onUpdateSkills, 
        if (treeCategory === 'Mage') {
            return isMageSkill;
        }
-
-       if (isDemonHunterSkill || isMageSkill) {
-           return false;
+       
+       if (treeCategory === 'Rogue') {
+           return isRogueSkill;
+       }
+       
+       if (treeCategory === 'Warrior') {
+           return isWarriorSkill;
        }
 
        if (treeCategory === 'Miscellaneous') {
-           return typeStr.includes('miscellaneous') || (!typeStr.includes('martial') && !typeStr.includes('arcane') && !typeStr.includes('dexterity'));
+           // Miscellaneous catches any skill not explicitly sorted into the other lists
+           return !isDemonHunterSkill && !isMageSkill && !isRogueSkill;
        }
-       return typeStr.includes(treeCategory.toLowerCase());
+       
+       return false;
     });
 
     if (categorySkills.length === 0) return { nodes: [], edges: [] };
@@ -674,15 +733,19 @@ const AllSkillsViewer = ({ allSkills, layoutData, selectedChar, onUpdateSkills, 
       node.x = radius * Math.cos(angle);
       node.y = radius * Math.sin(angle);
       
-      // 2. If you manually placed this node, override its coordinates AFTER the math
-      if (localLayout[node.name]) {
-         node.x = localLayout[node.name].x;
-         node.y = localLayout[node.name].y;
+      // 2. Check for tab-specific position, falling back to old layout format if it exists
+      const layoutKey = `${treeCategory}_${node.name}`;
+      const savedPos = localLayout[layoutKey] || localLayout[node.name];
+      
+      // 3. If you manually placed this node, override its coordinates AFTER the math
+      if (savedPos) {
+         node.x = savedPos.x;
+         node.y = savedPos.y;
       }
       
       finalNodes.push(node);
       
-      // 3. ALWAYS increment the ring count so the other nodes don't jump around
+      // 4. ALWAYS increment the ring count so the other nodes don't jump around
       ringCount++; 
     });
 
@@ -802,12 +865,13 @@ const AllSkillsViewer = ({ allSkills, layoutData, selectedChar, onUpdateSkills, 
           )}
         </div>
       ) : (
-        <div className="flex-1 relative w-full h-full p-2">
+<div className="flex-1 relative w-full h-full p-2">
           <PanZoomCanvas 
+            resetTrigger={treeCategory}
             onBgClick={() => setExpandedNode(null)}
             controls={
               <div className="flex bg-slate-800 p-1.5 rounded-lg border border-slate-600 shadow-lg gap-1 pointer-events-auto">
-                 {['Martial', 'Arcane', 'Dexterity', 'Miscellaneous', 'Demon Hunter', 'Mage'].map(cat => (
+                 {['Warrior','Rogue', 'Mage', 'Demon Hunter', 'Miscellaneous'].map(cat => (
                      <button 
                          key={cat}
                          onClick={() => { setTreeCategory(cat); setExpandedNode(null); }}
