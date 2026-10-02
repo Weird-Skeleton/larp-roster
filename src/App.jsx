@@ -139,6 +139,28 @@ const DEMON_HUNTER_SKILLS = [
   'unnatural health'
 ];
 
+const ARCANE_GRIFTER_SKILLS = [
+  'arcane grifter tools of the trade',
+  'arcane proficiency',
+  'assassinate',
+  'disarm',
+  'empower assassinate',
+  'escape',
+  'glyph',
+  'magic blade',
+  'magic knife',
+  'magic tools',
+  'missile deflection',
+  'poison immunity',
+  'power strike',
+  'resist curse',
+  'resist truth',
+  'sense trap',
+  'speed search',
+  'spell storing',
+  'true aim'
+];
+
 // SVG Assets dictionary for clean inline rendering
 const Icons = {
   Plus: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>,
@@ -194,6 +216,10 @@ const normalizeCharacter = (data) => {
 const normalizeSkillName = (name) => {
   if (!name) return '';
   let n = name.toLowerCase().trim();
+  
+  // Strip trailing multipliers like " x 2" or "x 3" so we can cleanly match base names
+  n = n.replace(/\s*x\s*\d+$/i, '');
+  
   n = n.replace(/weapon skill\s*:\s*/g, ''); 
   n = n.replace(/\s+skill/g, ''); 
   n = n.replace(/1-h/g, 'one-handed');
@@ -307,7 +333,7 @@ const PanZoomCanvas = ({ children, onBgClick, controls, resetTrigger }) => {
   );
 };
 
-// --- Viewers and Editors ---
+// Viewers and Editors
 
 const DictionaryEditor = ({ title, data, onChange }) => {
   const entries = Object.entries(data);
@@ -418,54 +444,69 @@ const SkillsEditor = ({ skills, onChange }) => {
   );
 };
 
-const SkillCard = ({ skill, isAcquired, handleToggleSkill, hasMissingPrereqs }) => (
-  <div className={`w-80 rounded-xl shadow-2xl border-2 p-5 flex flex-col transition-colors cursor-default ${isAcquired ? 'bg-blue-50 border-blue-400' : 'bg-white border-slate-300'}`}>
-    <div className="flex justify-between items-start mb-2 gap-3">
-      <h3 className={`text-lg font-bold leading-tight ${isAcquired ? 'text-blue-900' : 'text-slate-900'}`}>{skill.name}</h3>
-      <div className="flex items-center gap-2 shrink-0">
-        <span className={`${isAcquired ? 'bg-blue-200 text-blue-900' : 'bg-slate-200 text-slate-800'} text-xs font-black px-2 py-1 rounded-md shrink-0`}>Cost: {skill.buildCost}</span>
-        <button 
-          onClick={(e) => { e.stopPropagation(); handleToggleSkill(skill.name); }}
-          className={`p-1.5 rounded-md flex items-center justify-center transition-all shadow-sm ${isAcquired ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-emerald-500 text-white hover:bg-emerald-600'}`}
-          title={isAcquired ? 'Remove Skill' : 'Add Skill'}
-        >
-          {isAcquired ? <Icons.Minus /> : <Icons.Plus />}
-        </button>
+const SkillCard = ({ skill, skillCount, handleAddSkill, handleRemoveSkill, hasMissingPrereqs }) => {
+  const isAcquired = skillCount > 0;
+  const isMulti = skill.purchase === "Multi" || skill.purchase === "Multiple";
+
+  return (
+    <div className={`w-80 rounded-xl shadow-2xl border-2 p-5 flex flex-col transition-colors cursor-default ${isAcquired ? 'bg-blue-50 border-blue-400' : 'bg-white border-slate-300'}`}>
+      <div className="flex justify-between items-start mb-2 gap-3">
+        <h3 className={`text-lg font-bold leading-tight ${isAcquired ? 'text-blue-900' : 'text-slate-900'}`}>{skill.name}</h3>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className={`${isAcquired ? 'bg-blue-200 text-blue-900' : 'bg-slate-200 text-slate-800'} text-xs font-black px-2 py-1 rounded-md shrink-0`}>Cost: {skill.buildCost}</span>
+          
+          {isMulti && isAcquired ? (
+            <div className="flex items-center bg-white rounded-md shadow-sm border border-blue-300 overflow-hidden">
+              <button onClick={(e) => { e.stopPropagation(); handleRemoveSkill(skill.name); }} className="p-1.5 bg-red-500 text-white hover:bg-red-600 transition-colors" title="Remove 1"><Icons.Minus /></button>
+              <span className="px-2 font-black text-blue-900 text-xs">x{skillCount}</span>
+              <button onClick={(e) => { e.stopPropagation(); handleAddSkill(skill.name); }} className="p-1.5 bg-emerald-500 text-white hover:bg-emerald-600 transition-colors" title="Add 1"><Icons.Plus /></button>
+            </div>
+          ) : (
+            <button 
+              onClick={(e) => { e.stopPropagation(); isAcquired ? handleRemoveSkill(skill.name) : handleAddSkill(skill.name); }}
+              className={`p-1.5 rounded-md flex items-center justify-center transition-all shadow-sm ${isAcquired ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-emerald-500 text-white hover:bg-emerald-600'}`}
+              title={isAcquired ? 'Remove Skill' : 'Add Skill'}
+            >
+              {isAcquired ? <Icons.Minus /> : <Icons.Plus />}
+            </button>
+          )}
+        </div>
+      </div>
+      <div className={`text-xs font-semibold uppercase tracking-wider mb-4 flex flex-wrap gap-x-3 gap-y-1 ${isAcquired ? 'text-blue-700' : 'text-slate-500'}`}>
+        <span>List: <span className={isAcquired ? 'text-blue-900' : 'text-slate-700'}>{skill.skillList}</span></span>
+        <span className="opacity-50">•</span>
+        <span>Type: <span className={isAcquired ? 'text-blue-900' : 'text-slate-700'}>{skill.skillType}</span></span>
+      </div>
+      
+      <div className="flex flex-wrap gap-2 mb-4">
+        <span className={`border text-xs px-2 py-1 rounded font-medium ${isAcquired ? 'bg-blue-100 border-blue-200 text-blue-800' : 'bg-slate-100 border-slate-200 text-slate-600'}`}>Purchase: {skill.purchase}</span>
+        <span className={`border text-xs px-2 py-1 rounded font-medium ${isAcquired ? 'bg-blue-100 border-blue-200 text-blue-800' : 'bg-slate-100 border-slate-200 text-slate-600'}`}>Tagged: {skill.tagged}</span>
+        <span className={`border text-xs px-2 py-1 rounded font-medium ${isAcquired ? 'bg-blue-100 border-blue-200 text-blue-800' : 'bg-slate-100 border-slate-200 text-slate-600'}`}>Duration: {skill.duration}</span>
+      </div>
+
+      {skill.prerequisites && skill.prerequisites !== "None" && (
+        <div className={`border text-sm px-3 py-2 rounded-md mb-4 font-medium flex gap-2 items-center ${hasMissingPrereqs ? 'bg-amber-100 border-amber-300 text-amber-900' : 'bg-emerald-50 border-emerald-300 text-emerald-900'}`}>
+          {hasMissingPrereqs ? (
+             <svg className="w-4 h-4 shrink-0 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+          ) : (
+             <svg className="w-4 h-4 shrink-0 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+          )}
+          <span>Requires: {skill.prerequisites}</span>
+        </div>
+      )}
+
+      <div className={`text-sm whitespace-pre-wrap leading-relaxed flex-1 overflow-y-auto max-h-64 custom-scrollbar ${isAcquired ? 'text-blue-900' : 'text-slate-700'}`}>
+        {skill.description}
       </div>
     </div>
-    <div className={`text-xs font-semibold uppercase tracking-wider mb-4 flex flex-wrap gap-x-3 gap-y-1 ${isAcquired ? 'text-blue-700' : 'text-slate-500'}`}>
-      <span>List: <span className={isAcquired ? 'text-blue-900' : 'text-slate-700'}>{skill.skillList}</span></span>
-      <span className="opacity-50">•</span>
-      <span>Type: <span className={isAcquired ? 'text-blue-900' : 'text-slate-700'}>{skill.skillType}</span></span>
-    </div>
-    
-    <div className="flex flex-wrap gap-2 mb-4">
-      <span className={`border text-xs px-2 py-1 rounded font-medium ${isAcquired ? 'bg-blue-100 border-blue-200 text-blue-800' : 'bg-slate-100 border-slate-200 text-slate-600'}`}>Purchase: {skill.purchase}</span>
-      <span className={`border text-xs px-2 py-1 rounded font-medium ${isAcquired ? 'bg-blue-100 border-blue-200 text-blue-800' : 'bg-slate-100 border-slate-200 text-slate-600'}`}>Tagged: {skill.tagged}</span>
-      <span className={`border text-xs px-2 py-1 rounded font-medium ${isAcquired ? 'bg-blue-100 border-blue-200 text-blue-800' : 'bg-slate-100 border-slate-200 text-slate-600'}`}>Duration: {skill.duration}</span>
-    </div>
+  );
+};
 
-    {/* Conditionally renders an amber warning if prerequisites are missing, or a green check if cleared */}
-    {skill.prerequisites && skill.prerequisites !== "None" && (
-      <div className={`border text-sm px-3 py-2 rounded-md mb-4 font-medium flex gap-2 items-center ${hasMissingPrereqs ? 'bg-amber-100 border-amber-300 text-amber-900' : 'bg-emerald-50 border-emerald-300 text-emerald-900'}`}>
-        {hasMissingPrereqs ? (
-           <svg className="w-4 h-4 shrink-0 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-        ) : (
-           <svg className="w-4 h-4 shrink-0 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
-        )}
-        <span>Requires: {skill.prerequisites}</span>
-      </div>
-    )}
-
-    <div className={`text-sm whitespace-pre-wrap leading-relaxed flex-1 overflow-y-auto max-h-64 custom-scrollbar ${isAcquired ? 'text-blue-900' : 'text-slate-700'}`}>
-      {skill.description}
-    </div>
-  </div>
-);
-
-const DraggableNode = ({ node, isExpanded, isAcquired, isSearched, isEditMode, scale, onToggleExpand, handleToggleSkill, checkMissingPrereqs, updateNodePosition }) => {
+const DraggableNode = ({ node, isExpanded, skillCount, isSearched, isEditMode, scale, onToggleExpand, handleAddSkill, handleRemoveSkill, checkMissingPrereqs, updateNodePosition }) => {
   const draggingRef = useRef(false);
   const startPos = useRef({ x: 0, y: 0, nodeX: 0, nodeY: 0 });
+  const isAcquired = skillCount > 0;
+  const isMulti = node.purchase === "Multi" || node.purchase === "Multiple";
 
   const handlePointerDown = (e) => {
     if (!isEditMode) return;
@@ -478,10 +519,8 @@ const DraggableNode = ({ node, isExpanded, isAcquired, isSearched, isEditMode, s
   const handlePointerMove = (e) => {
     if (!draggingRef.current) return;
     e.stopPropagation();
-    
     const dx = (e.clientX - startPos.current.x) / scale;
     const dy = (e.clientY - startPos.current.y) / scale;
-    
     updateNodePosition(node.name, startPos.current.nodeX + dx, startPos.current.nodeY + dy);
   };
 
@@ -498,15 +537,17 @@ const DraggableNode = ({ node, isExpanded, isAcquired, isSearched, isEditMode, s
       className={`absolute ${isExpanded ? 'z-50' : 'z-10'}`}
     >
       {isExpanded ? (
-         <div 
+          <div 
            className="relative"
            onPointerDown={(e) => e.stopPropagation()} 
+           onPointerUp={(e) => e.stopPropagation()} 
            onClick={(e) => e.stopPropagation()} 
          >
-            <SkillCard 
+              <SkillCard 
                skill={node} 
-               isAcquired={isAcquired} 
-               handleToggleSkill={handleToggleSkill} 
+               skillCount={skillCount} 
+               handleAddSkill={handleAddSkill} 
+               handleRemoveSkill={handleRemoveSkill} 
                hasMissingPrereqs={checkMissingPrereqs(node)}
             />
             <button 
@@ -528,13 +569,18 @@ const DraggableNode = ({ node, isExpanded, isAcquired, isSearched, isEditMode, s
                if (!isEditMode) onToggleExpand(); 
             }}
             className={`
-              px-4 py-2 rounded-full shadow-md font-bold text-sm whitespace-nowrap border-2 transition-transform 
+              px-4 py-2 rounded-full shadow-md font-bold text-sm whitespace-nowrap border-2 transition-transform flex items-center justify-center gap-1.5
               ${isEditMode ? 'cursor-grab active:cursor-grabbing hover:scale-105' : 'cursor-pointer hover:scale-110 pointer-events-auto'}
               ${isAcquired ? 'bg-blue-300 border-blue-500 text-blue-900' : 'bg-slate-800 border-slate-600 text-slate-200'}
               ${isSearched ? 'ring-4 ring-indigo-500 ring-offset-2 ring-offset-slate-900' : ''}
             `}
          >
-            {node.name}
+            <span>{node.name}</span>
+            {isMulti && isAcquired && (
+               <span className="bg-blue-900 text-blue-100 text-[10px] px-1.5 py-0.5 rounded-md font-black shadow-inner opacity-90 leading-none">
+                 x{skillCount}
+               </span>
+            )}
          </div>
       )}
     </div>
@@ -556,6 +602,7 @@ const AllSkillsViewer = ({ allSkills, layoutData, selectedChar, onUpdateSkills, 
      }
   }, [layoutData]);
 
+  // Ensure these variables exist BEFORE the handlers that use them
   const charSkills = selectedChar ? (Array.isArray(selectedChar.skills) ? selectedChar.skills : []) : [];
   const charSkillsLower = charSkills.map(s => typeof s === 'string' ? s.toLowerCase().trim() : '');
   
@@ -570,8 +617,11 @@ const AllSkillsViewer = ({ allSkills, layoutData, selectedChar, onUpdateSkills, 
      })).sort((a,b) => b.normalized.length - a.normalized.length);
   }, [allSkills]);
 
-  const checkMissingPrereqs = useCallback((skill) => {
-    if (skill.name.toLowerCase().trim() === 'florentine') {
+const checkMissingPrereqs = useCallback((skill) => {
+    const checkName = skill.name.toLowerCase().trim();
+
+    // Intercept for Florentine
+    if (checkName === 'florentine') {
       const hasOneHandedWeapon = charSkillsLower.some(s => 
         s.includes('1-h') || 
         s.includes('1 handed') || 
@@ -582,6 +632,43 @@ const AllSkillsViewer = ({ allSkills, layoutData, selectedChar, onUpdateSkills, 
       return !hasOneHandedWeapon; 
     }
 
+    // Intercept for Disarm
+    if (checkName === 'disarm') {
+      const hasWeaponSkill = charSkillsLower.some(s => 
+        s.includes('weapon skill') || 
+        s.includes('1-h') || 
+        s.includes('2-h') || 
+        s.includes('one handed') || 
+        s.includes('one-handed') ||
+        s.includes('two handed') || 
+        s.includes('two-handed') || 
+        s.includes('bow') || 
+        s.includes('quarterstaff') || 
+        s.includes('spear') || 
+        s.includes('polearm')
+      );
+      return !hasWeaponSkill; 
+    }
+
+      // Intercept for Critical Attack
+    if (checkName === 'critical attack') {
+      const hasWeaponSkill = charSkillsLower.some(s => 
+        s.includes('weapon skill') || 
+        s.includes('1-h') || 
+        s.includes('2-h') || 
+        s.includes('one handed') || 
+        s.includes('one-handed') ||
+        s.includes('two handed') || 
+        s.includes('two-handed') || 
+        s.includes('bow') || 
+        s.includes('quarterstaff') || 
+        s.includes('spear') || 
+        s.includes('polearm')
+      );
+      return !hasWeaponSkill; 
+    }
+
+    // Standard prerequisite parsing for everything else
     let prereqStr = normalizeSkillName(skill.prerequisites || "");
     if (!prereqStr || prereqStr === "none") return false;
     
@@ -599,32 +686,78 @@ const AllSkillsViewer = ({ allSkills, layoutData, selectedChar, onUpdateSkills, 
     return true; 
   }, [allSkillNamesNormalized, charSkillsNormalized, charSkillsLower]);
 
-  const handleToggleSkill = (skillName) => {
+  const getSkillCount = useCallback((skillName) => {
+    const normalizedTarget = normalizeSkillName(skillName);
+    let count = 0;
+    charSkills.forEach(s => {
+       if (typeof s === 'string' && normalizeSkillName(s) === normalizedTarget) {
+          const match = s.match(/x\s*(\d+)$/i);
+          count += match ? parseInt(match[1], 10) : 1;
+       }
+    });
+    return count;
+  }, [charSkills]);
+
+  const handleAddSkill = useCallback((skillName) => {
     if (!selectedChar) {
       showToast('Please select a character from the roster first.', 'error');
       return;
     }
     
     const normalizedTarget = normalizeSkillName(skillName);
-    const index = charSkillsNormalized.findIndex(s => s === normalizedTarget);
+    let currentCount = 0;
     
-    if (index !== -1) {
-      const newSkills = [...charSkills];
-      newSkills.splice(index, 1);
-      onUpdateSkills(newSkills);
-      showToast(`Removed ${skillName}`);
-    } else {
-      onUpdateSkills([...charSkills, skillName]);
-      showToast(`Added ${skillName}`);
+    // Filter out existing matches to consolidate them
+    const newSkills = charSkills.filter(s => {
+       if (typeof s === 'string' && normalizeSkillName(s) === normalizedTarget) {
+           const match = s.match(/x\s*(\d+)$/i);
+           currentCount += match ? parseInt(match[1], 10) : 1;
+           return false; 
+       }
+       return true;
+    });
+    
+    const nextCount = currentCount + 1;
+    const finalName = nextCount > 1 ? `${skillName} x ${nextCount}` : skillName;
+    newSkills.push(finalName);
+    
+    onUpdateSkills(newSkills);
+    showToast(`Added ${skillName}`);
+  }, [selectedChar, charSkills, onUpdateSkills, showToast]);
+
+  const handleRemoveSkill = useCallback((skillName) => {
+    if (!selectedChar) return;
+    const normalizedTarget = normalizeSkillName(skillName);
+    let currentCount = 0;
+    
+    // Filter out existing matches
+    const newSkills = charSkills.filter(s => {
+       if (typeof s === 'string' && normalizeSkillName(s) === normalizedTarget) {
+           const match = s.match(/x\s*(\d+)$/i);
+           currentCount += match ? parseInt(match[1], 10) : 1;
+           return false; 
+       }
+       return true;
+    });
+    
+    if (currentCount > 0) {
+       const nextCount = currentCount - 1;
+       // Only push back if we still have at least 1 left
+       if (nextCount > 0) {
+          const finalName = nextCount > 1 ? `${skillName} x ${nextCount}` : skillName;
+          newSkills.push(finalName);
+       }
+       onUpdateSkills(newSkills);
+       showToast(`Removed ${skillName}`);
     }
-  };
+  }, [selectedChar, charSkills, onUpdateSkills, showToast]);
 
   const updateNodePosition = useCallback((nodeName, x, y) => {
       setLocalLayout(prev => ({
         ...prev,
         [`${treeCategory}_${nodeName}`]: { x, y }
       }));
-    }, [treeCategory]);
+  }, [treeCategory]);
 
   const exportLayout = () => {
     try {
@@ -644,15 +777,20 @@ const AllSkillsViewer = ({ allSkills, layoutData, selectedChar, onUpdateSkills, 
   };
 
   const treeData = useMemo(() => {
-const categorySkills = allSkills.filter(s => {
+    const categorySkills = allSkills.filter(s => {
        const normalizedName = normalizeSkillName(s.name);
-       const isDemonHunterSkill = DEMON_HUNTER_SKILLS.includes(normalizedName);
        const isMageSkill = MAGE_SKILLS.includes(normalizedName);
        const isRogueSkill = ROGUE_SKILLS.includes(normalizedName);
        const isWarriorSkill = WARRIOR_SKILLS.includes(normalizedName);
+       const isDemonHunterSkill = DEMON_HUNTER_SKILLS.includes(normalizedName);
+       const isArcaneGrifterSkill = ARCANE_GRIFTER_SKILLS.includes(normalizedName);
 
        if (treeCategory === 'Demon Hunter') {
            return isDemonHunterSkill;
+       }
+
+       if (treeCategory === 'Arcane Grifter') {
+           return isArcaneGrifterSkill;
        }
 
        if (treeCategory === 'Mage') {
@@ -668,8 +806,7 @@ const categorySkills = allSkills.filter(s => {
        }
 
        if (treeCategory === 'Miscellaneous') {
-           // Miscellaneous catches any skill not explicitly sorted into the other lists
-           return !isDemonHunterSkill && !isMageSkill && !isRogueSkill;
+           return !isDemonHunterSkill && !isMageSkill && !isRogueSkill && !isWarriorSkill && !isArcaneGrifterSkill;
        }
        
        return false;
@@ -709,7 +846,6 @@ const categorySkills = allSkills.filter(s => {
 
     nodesList.sort((a, b) => b.degree - a.degree);
 
-// 5. Expand outward in concentric rings
     let ringIndex = 0;
     let nodesInCurrentRing = 1;
     let ringCount = 0;
@@ -720,7 +856,6 @@ const categorySkills = allSkills.filter(s => {
     const finalEdges = [];
 
     nodesList.forEach((node) => {
-      // 1. ALWAYS run the radial math to keep the underlying grid stable
       if (ringCount >= nodesInCurrentRing) {
          ringIndex++;
          nodesInCurrentRing = Math.max(1, Math.floor((2 * Math.PI * (ringIndex * RADIAL_SPACING)) / MIN_ARC_LENGTH));
@@ -733,11 +868,9 @@ const categorySkills = allSkills.filter(s => {
       node.x = radius * Math.cos(angle);
       node.y = radius * Math.sin(angle);
       
-      // 2. Check for tab-specific position, falling back to old layout format if it exists
       const layoutKey = `${treeCategory}_${node.name}`;
       const savedPos = localLayout[layoutKey] || localLayout[node.name];
       
-      // 3. If you manually placed this node, override its coordinates AFTER the math
       if (savedPos) {
          node.x = savedPos.x;
          node.y = savedPos.y;
@@ -745,7 +878,6 @@ const categorySkills = allSkills.filter(s => {
       
       finalNodes.push(node);
       
-      // 4. ALWAYS increment the ring count so the other nodes don't jump around
       ringCount++; 
     });
 
@@ -853,10 +985,11 @@ const categorySkills = allSkills.filter(s => {
                 })
                 .map((skill, idx) => (
                 <div key={idx} className="flex justify-center">
-                  <SkillCard 
+                    <SkillCard 
                      skill={skill} 
-                     isAcquired={charSkillsNormalized.includes(normalizeSkillName(skill.name))} 
-                     handleToggleSkill={handleToggleSkill} 
+                     skillCount={getSkillCount(skill.name)} 
+                     handleAddSkill={handleAddSkill} 
+                     handleRemoveSkill={handleRemoveSkill} 
                      hasMissingPrereqs={checkMissingPrereqs(skill)}
                   />
                 </div>
@@ -865,13 +998,13 @@ const categorySkills = allSkills.filter(s => {
           )}
         </div>
       ) : (
-<div className="flex-1 relative w-full h-full p-2">
+        <div className="flex-1 relative w-full h-full p-2">
           <PanZoomCanvas 
             resetTrigger={treeCategory}
             onBgClick={() => setExpandedNode(null)}
             controls={
               <div className="flex bg-slate-800 p-1.5 rounded-lg border border-slate-600 shadow-lg gap-1 pointer-events-auto">
-                 {['Warrior','Rogue', 'Mage', 'Demon Hunter', 'Miscellaneous'].map(cat => (
+                 {['Warrior', 'Rogue', 'Mage', 'Demon Hunter', 'Arcane Grifter', 'Miscellaneous'].map(cat => (
                      <button 
                          key={cat}
                          onClick={() => { setTreeCategory(cat); setExpandedNode(null); }}
@@ -899,16 +1032,17 @@ const categorySkills = allSkills.filter(s => {
 
                 <div className="absolute top-0 left-0 w-full h-full overflow-visible z-10">
                    {treeData.nodes.map(node => (
-                     <DraggableNode 
+                      <DraggableNode 
                        key={node.name}
                        node={node}
                        scale={scale}
                        isEditMode={isEditMode}
                        isExpanded={expandedNode === node.name}
-                       isAcquired={charSkillsNormalized.includes(normalizeSkillName(node.name))}
+                       skillCount={getSkillCount(node.name)}
                        isSearched={searchTerm && node.name.toLowerCase().includes(searchTerm.toLowerCase())}
                        onToggleExpand={() => setExpandedNode(expandedNode === node.name ? null : node.name)}
-                       handleToggleSkill={handleToggleSkill}
+                       handleAddSkill={handleAddSkill}
+                       handleRemoveSkill={handleRemoveSkill}
                        checkMissingPrereqs={checkMissingPrereqs}
                        updateNodePosition={updateNodePosition}
                      />
