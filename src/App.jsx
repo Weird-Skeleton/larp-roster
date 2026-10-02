@@ -253,7 +253,7 @@ const PanZoomCanvas = ({ children, onBgClick, controls, resetTrigger }) => {
   }, [resetTrigger]);
 
   const handlePointerDown = (e) => {
-    if (e.button !== 0) return; 
+    if (e.pointerType === 'mouse' && e.button !== 0) return; 
     isDragging.current = true;
     dragDistance.current = 0;
     lastMouse.current = { x: e.clientX, y: e.clientY };
@@ -307,7 +307,7 @@ const PanZoomCanvas = ({ children, onBgClick, controls, resetTrigger }) => {
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
-      className="relative w-full h-full overflow-hidden bg-slate-900 cursor-grab active:cursor-grabbing rounded-lg border border-slate-700 shadow-inner"
+      className="relative w-full h-full overflow-hidden bg-slate-900 cursor-grab active:cursor-grabbing rounded-lg border border-slate-700 shadow-inner touch-none"
     >
       <div 
         className="absolute top-0 left-0 w-full h-full origin-top-left will-change-transform pointer-events-none"
@@ -1003,7 +1003,7 @@ const checkMissingPrereqs = useCallback((skill) => {
             resetTrigger={treeCategory}
             onBgClick={() => setExpandedNode(null)}
             controls={
-              <div className="flex bg-slate-800 p-1.5 rounded-lg border border-slate-600 shadow-lg gap-1 pointer-events-auto">
+              <div className="flex flex-wrap justify-center bg-slate-800 p-1.5 rounded-lg border border-slate-600 shadow-lg gap-1 pointer-events-auto max-w-full">
                  {['Warrior', 'Rogue', 'Mage', 'Demon Hunter', 'Arcane Grifter', 'Miscellaneous'].map(cat => (
                      <button 
                          key={cat}
@@ -1062,8 +1062,8 @@ export default function App() {
   const [characters, setCharacters] = useState(INITIAL_CHARACTERS);
   const [skillTreeData, setSkillTreeData] = useState([]);
   const [layoutData, setLayoutData] = useState({});
-  const [selectedId, setSelectedId] = useState(INITIAL_CHARACTERS[0].id);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+const [selectedId, setSelectedId] = useState(INITIAL_CHARACTERS[0].id);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(typeof window !== 'undefined' ? window.innerWidth >= 768 : true);
   const [toast, setToast] = useState({ message: '', type: 'success' });
   const fileInputRef = useRef(null);
 
@@ -1244,13 +1244,13 @@ export default function App() {
             
             <div className="flex p-2 bg-slate-100 border-b border-slate-200 gap-2 shrink-0">
               <button 
-                onClick={() => setActiveView('roster')} 
+                onClick={() => { setActiveView('roster'); if (window.innerWidth < 768) setIsSidebarOpen(false); }} 
                 className={`flex-1 py-2 px-2 text-sm font-bold rounded flex items-center justify-center gap-2 transition-colors ${activeView === 'roster' ? 'bg-white shadow-sm text-indigo-700 border border-slate-200' : 'text-slate-500 hover:bg-slate-200 hover:text-slate-800'}`}
               >
                 <Icons.Users /> Editor
               </button>
               <button 
-                onClick={() => setActiveView('allSkills')} 
+                onClick={() => { setActiveView('allSkills'); if (window.innerWidth < 768) setIsSidebarOpen(false); }} 
                 className={`flex-1 py-2 px-2 text-sm font-bold rounded flex items-center justify-center gap-2 transition-colors ${activeView === 'allSkills' ? 'bg-white shadow-sm text-indigo-700 border border-slate-200' : 'text-slate-500 hover:bg-slate-200 hover:text-slate-800'}`}
               >
                 <Icons.List /> All Skills
@@ -1272,7 +1272,11 @@ export default function App() {
                 return (
                   <div 
                     key={char.id} 
-                    onClick={() => { setSelectedId(char.id); }}
+                    onClick={() => { 
+                      setSelectedId(char.id); 
+                      setActiveView('roster');
+                      if (window.innerWidth < 768) setIsSidebarOpen(false); 
+                    }}
                     className={`p-3 rounded-lg border cursor-pointer transition-all flex justify-between items-center group
                       ${isSelected 
                         ? 'bg-indigo-50 border-indigo-200 shadow-sm' 
