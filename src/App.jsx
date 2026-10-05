@@ -161,6 +161,18 @@ const ARCANE_GRIFTER_SKILLS = [
   'true aim'
 ];
 
+const SPELL_SINGER_SKILLS = [
+  'echo',
+  'extend spell song',
+  'spell singer',
+  'spell singing points',
+  'spell singing rank 1',
+  'spell singing rank 2',
+  'spell singing rank 3',
+  'spell singing rank 4',
+  'spell singing rank 5'
+];
+
 // SVG Assets dictionary for clean inline rendering
 const Icons = {
   Plus: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>,
@@ -784,29 +796,24 @@ const checkMissingPrereqs = useCallback((skill) => {
        const isWarriorSkill = WARRIOR_SKILLS.includes(normalizedName);
        const isDemonHunterSkill = DEMON_HUNTER_SKILLS.includes(normalizedName);
        const isArcaneGrifterSkill = ARCANE_GRIFTER_SKILLS.includes(normalizedName);
+       const isSpellSingerSkill = SPELL_SINGER_SKILLS.includes(normalizedName);
 
-       if (treeCategory === 'Demon Hunter') {
-           return isDemonHunterSkill;
-       }
-
-       if (treeCategory === 'Arcane Grifter') {
-           return isArcaneGrifterSkill;
-       }
-
-       if (treeCategory === 'Mage') {
-           return isMageSkill;
-       }
-       
-       if (treeCategory === 'Rogue') {
-           return isRogueSkill;
-       }
-       
-       if (treeCategory === 'Warrior') {
-           return isWarriorSkill;
-       }
-
-       if (treeCategory === 'Miscellaneous') {
-           return !isDemonHunterSkill && !isMageSkill && !isRogueSkill && !isWarriorSkill && !isArcaneGrifterSkill;
+       switch(treeCategory) {
+           case 'Demon Hunter':
+               return isDemonHunterSkill;
+           case 'Arcane Grifter':
+               return isArcaneGrifterSkill;
+           case 'Spell Singer':
+               return isSpellSingerSkill;
+           case 'Mage':
+               return isMageSkill;
+           case 'Rogue':
+               return isRogueSkill;
+           case 'Warrior':
+               return isWarriorSkill;
+           default:
+               return !isDemonHunterSkill && !isArcaneGrifterSkill && !isSpellSingerSkill && 
+                      !isMageSkill && !isRogueSkill && !isWarriorSkill;
        }
        
        return false;
@@ -908,22 +915,22 @@ const checkMissingPrereqs = useCallback((skill) => {
           </p>
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full md:w-auto mt-4 md:mt-0">
            {viewMode === 'tree' && (
-             <div className="flex gap-2">
+             <div className="flex flex-col sm:flex-row gap-2">
                 <button 
                   onClick={() => {
                      setIsEditMode(!isEditMode);
                      setExpandedNode(null);
                   }}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-bold transition-colors border shadow-sm ${isEditMode ? 'bg-amber-100 border-amber-300 text-amber-700' : 'bg-white border-slate-300 text-slate-600 hover:bg-slate-50'}`}
+                  className={`flex items-center justify-center gap-2 px-3 py-2 rounded text-sm font-bold transition-colors border shadow-sm ${isEditMode ? 'bg-amber-100 border-amber-300 text-amber-700' : 'bg-white border-slate-300 text-slate-600 hover:bg-slate-50'}`}
                 >
                   <Icons.Edit /> {isEditMode ? 'Editing Constellation' : 'Edit Layout'}
                 </button>
                 {isEditMode && (
                    <button 
                      onClick={exportLayout}
-                     className="flex items-center gap-2 px-3 py-1.5 rounded text-sm font-bold transition-colors border border-emerald-600 bg-emerald-500 text-white hover:bg-emerald-600 shadow-sm"
+                     className="flex items-center justify-center gap-2 px-3 py-2 rounded text-sm font-bold transition-colors border border-emerald-600 bg-emerald-500 text-white hover:bg-emerald-600 shadow-sm"
                    >
                      <Icons.Download /> Export Layout
                    </button>
@@ -931,16 +938,16 @@ const checkMissingPrereqs = useCallback((skill) => {
              </div>
            )}
 
-           <div className="flex bg-slate-200 p-1 rounded-md border border-slate-300">
+           <div className="flex bg-slate-200 p-1 rounded-md border border-slate-300 justify-center">
               <button 
                 onClick={() => { setViewMode('list'); setIsEditMode(false); }} 
-                className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-bold transition-colors ${viewMode === 'list' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-1.5 rounded text-sm font-bold transition-colors ${viewMode === 'list' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
               >
                 <Icons.Grid /> List
               </button>
               <button 
                 onClick={() => setViewMode('tree')} 
-                className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-bold transition-colors ${viewMode === 'tree' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-1.5 rounded text-sm font-bold transition-colors ${viewMode === 'tree' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
               >
                 <Icons.Tree /> Tree
               </button>
@@ -951,7 +958,7 @@ const checkMissingPrereqs = useCallback((skill) => {
              placeholder="Search skills..." 
              value={searchTerm}
              onChange={(e) => setSearchTerm(e.target.value)}
-             className="border border-slate-300 rounded-md px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none w-48 shadow-sm"
+             className="border border-slate-300 rounded-md px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none w-full md:w-48 shadow-sm"
            />
         </div>
       </div>
@@ -1003,12 +1010,12 @@ const checkMissingPrereqs = useCallback((skill) => {
             resetTrigger={treeCategory}
             onBgClick={() => setExpandedNode(null)}
             controls={
-              <div className="flex flex-wrap justify-center bg-slate-800 p-1.5 rounded-lg border border-slate-600 shadow-lg gap-1 pointer-events-auto max-w-full">
-                 {['Warrior', 'Rogue', 'Mage', 'Demon Hunter', 'Arcane Grifter', 'Miscellaneous'].map(cat => (
+              <div className="flex overflow-x-auto custom-scrollbar bg-slate-800 p-1.5 pb-2 rounded-lg border border-slate-600 shadow-lg gap-1 pointer-events-auto max-w-[calc(100vw-3rem)] md:max-w-2xl">
+                 {['Warrior', 'Rogue', 'Mage', 'Demon Hunter', 'Arcane Grifter', 'Spell Singer', 'Miscellaneous'].map(cat => (
                      <button 
                          key={cat}
                          onClick={() => { setTreeCategory(cat); setExpandedNode(null); }}
-                         className={`px-4 py-2 text-sm font-bold rounded-md transition-colors ${treeCategory === cat ? 'bg-indigo-500 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`}
+                         className={`shrink-0 whitespace-nowrap px-4 py-2 text-sm font-bold rounded-md transition-colors ${treeCategory === cat ? 'bg-indigo-500 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`}
                      >
                          {cat}
                      </button>
@@ -1309,7 +1316,7 @@ const [selectedId, setSelectedId] = useState(INITIAL_CHARACTERS[0].id);
           </aside>
         </div>
 
-        <main className="flex-1 overflow-y-auto bg-slate-50 rounded-xl relative custom-scrollbar border border-slate-200 shadow-sm flex flex-col">
+        <main className="flex-1 overflow-hidden bg-slate-50 rounded-xl relative border border-slate-200 shadow-sm flex flex-col">
           {activeView === 'allSkills' ? (
              <AllSkillsViewer 
                 allSkills={skillTreeData} 
@@ -1324,7 +1331,7 @@ const [selectedId, setSelectedId] = useState(INITIAL_CHARACTERS[0].id);
               <p className="text-sm mt-1 max-w-xs">Select a character from the roster on the left, or add a new one to begin editing.</p>
             </div>
           ) : (
-            <div className="p-6 md:p-8 max-w-4xl mx-auto min-h-full w-full">
+            <div className="p-6 md:p-8 max-w-4xl mx-auto min-h-full w-full overflow-y-auto custom-scrollbar">
               
               <div className="flex justify-between items-end mb-6 pb-4 border-b-2 border-slate-200">
                  <div>
@@ -1385,10 +1392,12 @@ const [selectedId, setSelectedId] = useState(INITIAL_CHARACTERS[0].id);
       <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'success' })} />
 
       <style dangerouslySetInnerHTML={{__html: `
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}} />
     </div>
   );
