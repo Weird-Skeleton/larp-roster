@@ -161,6 +161,65 @@ const ARCANE_GRIFTER_SKILLS = [
   'true aim'
 ];
 
+const MONK_SKILLS = [
+  'blind fighting',
+  'critical backstab',
+  'dodge',
+  'escape',
+  'flurry of blows',
+  'iron hand',
+  'iron skin',
+  'master parry',
+  'missile deflection',
+  'monk proficiency',
+  'mystic fist',
+  'paralysis strike',
+  'resist disease/poison',
+  'shatter weapon',
+  'soul palm',
+  'soul strike',
+  'speed',
+  'spirit palm',
+  'tight rope walker',
+  'weapon accuracy'
+];
+
+const MYSTIC_WARRIOR_SKILLS = [
+  'channeling',
+  'combat casting',
+  'dispelling strike',
+  'expanded focus',
+  'extension',
+  'imbue weapon',
+  'mystic proficiency',
+  'mystic weapons',
+  'redirect spell',
+  'rend magic',
+  'shield of the elements',
+  'speed',
+  'spell parry'
+];
+
+const MASTER_THIEF_SKILLS = [
+  'advanced set traps',
+  'critical backstab',
+  'distraction',
+  'dodge',
+  'escape',
+  'master set traps',
+  'master thief',
+  'master waylay',
+  'missile deflection',
+  'pick pockets',
+  'poison immunity',
+  'quick disarm trap',
+  'quick pick locks',
+  'set trap rank 5',
+  'speed search',
+  'tight rope walker',
+  'trap dodge'
+];
+
 const SPELL_SINGER_SKILLS = [
   'echo',
   'extend spell song',
@@ -171,6 +230,190 @@ const SPELL_SINGER_SKILLS = [
   'spell singing rank 3',
   'spell singing rank 4',
   'spell singing rank 5'
+];
+
+const ALCHEMIST_SKILLS = [
+  'advanced refining',
+  'alchemy lore',
+  'create golem rank 1', 'create golem rank 2', 'create golem rank 3', 'create golem rank 4', 'create golem rank 5', 'create golem rank 6',
+  'dissection',
+  'embalming',
+  'extend duration',
+  'identify component',
+  'inner catalyst',
+  'make contact',
+  'make gaseous',
+  'poison immunity',
+  'poisons rank 1', 'poisons rank 2', 'poisons rank 3', 'poisons rank 4', 'poisons rank 5', 'poisons rank 6',
+  'potions rank 1', 'potions rank 2', 'potions rank 3', 'potions rank 4', 'potions rank 5', 'potions rank 6',
+  'resist alchemy',
+  'solutions rank 1', 'solutions rank 2', 'solutions rank 3', 'solutions rank 4', 'solutions rank 5', 'solutions rank 6'
+];
+
+const MASTER_ASSASSIN_SKILLS = [
+  'agony strike',
+  'assassin proficiency',
+  'assassin strike',
+  'assassinate',
+  'blind fighting',
+  'dodge',
+  'escape',
+  'hypnosis',
+  'master assassin',
+  'missile deflection',
+  'paralyze touch',
+  'poison immunity',
+  'preserve venoms',
+  'resist truth',
+  'true aim',
+  'venom master',
+  'weapon accuracy'
+];
+
+const MASTER_WARRIOR_SKILLS = [
+  'armor efficiency',
+  'blind fighting',
+  'feat of strength',
+  'greater disarm',
+  'indomitable warrior',
+  'master florentine',
+  'master parry',
+  'master proficiency',
+  'riposte',
+  'shatter weapon',
+  'shield parry',
+  'slay',
+  'speed',
+  'true aim',
+  'weapon accuracy',
+  'weapons master'
+];
+
+const RANGER_SKILLS = [
+  'armor efficiency',
+  'blind fighting',
+  'bump of direction',
+  'double shot',
+  'far shot',
+  'fast track',
+  'ghost step',
+  'marksman',
+  'master parry',
+  'ranger proficiency',
+  'ranger weapons',
+  'slay',
+  'survival',
+  'true aim'
+];
+
+const SORCERER_SKILLS = [
+  'cosmic focus',
+  'create scroll',
+  'dissection',
+  'sorcery lore',
+  'sorcery rank 1', 'sorcery rank 2', 'sorcery rank 3', 'sorcery rank 4', 'sorcery rank 5', 'sorcery rank 6'
+];
+
+const WARLOCK_SKILLS = [
+  'concentration',
+  'double cast',
+  'double power',
+  'killing blow magic',
+  'overlay',
+  'perfect aim',
+  'recover power',
+  'speed cast',
+  'spell binding',
+  'spell holding',
+  'spell immunity',
+  'total power'
+];
+
+const DRUID_SKILLS = [
+  'aspect of the beast',
+  'bark skin',
+  'claws',
+  'compel mother\'s children',
+  'druid',
+  'elemental attunement',
+  'elemental pool points',
+  'elemental quintessence',
+  'forest meld',
+  'hibernate',
+  'nature magic rank 1', 'nature magic rank 2', 'nature magic rank 3', 'nature magic rank 4', 'nature magic rank 5', 'nature magic rank 6',
+  'nature\'s child',
+  'nature\'s health',
+  'nature\'s purity',
+  'pass without a trace',
+  'shapeshift'
+];
+
+const PALADIN_SKILLS = [
+  'battle blessing',
+  'destroy lesser vile spawn',
+  'destroy vile spawn',
+  'detect lie',
+  'detect vile spawn',
+  'greater magic weapon',
+  'heal life',
+  'heal wounds',
+  'holy blessing',
+  'immunity to charm',
+  'paladin',
+  'repel vile spawn',
+  'resist evil',
+  'turn lesser vile spawn',
+  'turn vile spawn horde'
+];
+
+const CLERIC_SKILLS = [
+  'champion\'s blessing',
+  'cleric',
+  'crusaders seal',
+  'detect lie',
+  'detect vile spawn',
+  'exorcism',
+  'heal life',
+  'heal wounds',
+  'repel vile spawn',
+  'turn lesser vile spawn',
+  'turn vile spawn horde'
+];
+
+const DARK_PALADIN_SKILLS = [
+  'cloak undead',
+  'compel greater vile spawn',
+  'control lesser vile spawn',
+  'control vile spawnhorde',
+  'dark blessing',
+  'dark paladin',
+  'death touch',
+  'empower evil',
+  'fear gaze',
+  'greater magic weapon',
+  'hellish attunement',
+  'immunity to charm',
+  'lie',
+  'pain touch',
+  'sever soul',
+  'unlife',
+  'venom touch',
+  'wounding'
+];
+
+const DARK_CLERIC_SKILLS = [
+  'cloak undead',
+  'compel greater vile spawn',
+  'control lesser vile spawn',
+  'dark blessing',
+  'dark cleric',
+  'dark mastery',
+  'hellish attunement',
+  'lie',
+  'pain touch',
+  'unlife',
+  'withering touch',
+  'wounding'
 ];
 
 // SVG Assets dictionary for clean inline rendering
@@ -791,12 +1034,26 @@ const checkMissingPrereqs = useCallback((skill) => {
   const treeData = useMemo(() => {
     const categorySkills = allSkills.filter(s => {
        const normalizedName = normalizeSkillName(s.name);
+       const isDemonHunterSkill = DEMON_HUNTER_SKILLS.includes(normalizedName);
        const isMageSkill = MAGE_SKILLS.includes(normalizedName);
        const isRogueSkill = ROGUE_SKILLS.includes(normalizedName);
        const isWarriorSkill = WARRIOR_SKILLS.includes(normalizedName);
-       const isDemonHunterSkill = DEMON_HUNTER_SKILLS.includes(normalizedName);
        const isArcaneGrifterSkill = ARCANE_GRIFTER_SKILLS.includes(normalizedName);
        const isSpellSingerSkill = SPELL_SINGER_SKILLS.includes(normalizedName);
+       const isAlchemistSkill = ALCHEMIST_SKILLS.includes(normalizedName);
+       const isMonkSkill = MONK_SKILLS.includes(normalizedName);
+       const isMysticWarriorSkill = MYSTIC_WARRIOR_SKILLS.includes(normalizedName);
+       const isMasterThiefSkill = MASTER_THIEF_SKILLS.includes(normalizedName);
+       const isMasterAssassinSkill = MASTER_ASSASSIN_SKILLS.includes(normalizedName);
+       const isMasterWarriorSkill = MASTER_WARRIOR_SKILLS.includes(normalizedName);
+       const isRangerSkill = RANGER_SKILLS.includes(normalizedName);
+       const isSorcererSkill = SORCERER_SKILLS.includes(normalizedName);
+       const isWarlockSkill = WARLOCK_SKILLS.includes(normalizedName);
+       const isDruidSkill = DRUID_SKILLS.includes(normalizedName);
+       const isPaladinSkill = PALADIN_SKILLS.includes(normalizedName);
+       const isClericSkill = CLERIC_SKILLS.includes(normalizedName);
+       const isDarkPaladinSkill = DARK_PALADIN_SKILLS.includes(normalizedName);
+       const isDarkClericSkill = DARK_CLERIC_SKILLS.includes(normalizedName);
 
        switch(treeCategory) {
            case 'Demon Hunter':
@@ -805,18 +1062,50 @@ const checkMissingPrereqs = useCallback((skill) => {
                return isArcaneGrifterSkill;
            case 'Spell Singer':
                return isSpellSingerSkill;
+           case 'Alchemist':
+               return isAlchemistSkill;
+           case 'Monk':
+               return isMonkSkill;
+           case 'Mystic Warrior':
+               return isMysticWarriorSkill;
+           case 'Master Thief':
+               return isMasterThiefSkill;
+           case 'Master Assassin':
+               return isMasterAssassinSkill;
+           case 'Master Warrior':
+               return isMasterWarriorSkill;
+           case 'Ranger':
+               return isRangerSkill;
+           case 'Sorcerer':
+               return isSorcererSkill;
+           case 'Warlock':
+               return isWarlockSkill;
+           case 'Druid':
+               return isDruidSkill;
+           case 'Paladin':
+               return isPaladinSkill;
+           case 'Cleric':
+               return isClericSkill;
+           case 'Dark Paladin':
+               return isDarkPaladinSkill;
+           case 'Dark Cleric':
+               return isDarkClericSkill;
            case 'Mage':
                return isMageSkill;
            case 'Rogue':
                return isRogueSkill;
            case 'Warrior':
                return isWarriorSkill;
+           case 'Miscellaneous':
            default:
+               // Only return true if it doesn't belong to ANY of the above categories
                return !isDemonHunterSkill && !isArcaneGrifterSkill && !isSpellSingerSkill && 
-                      !isMageSkill && !isRogueSkill && !isWarriorSkill;
+                      !isMageSkill && !isRogueSkill && !isWarriorSkill && !isAlchemistSkill && 
+                      !isMonkSkill && !isMysticWarriorSkill && !isMasterThiefSkill && 
+                      !isMasterAssassinSkill && !isMasterWarriorSkill && !isRangerSkill && 
+                      !isSorcererSkill && !isWarlockSkill && !isDruidSkill && !isPaladinSkill && 
+                      !isClericSkill && !isDarkPaladinSkill && !isDarkClericSkill;
        }
-       
-       return false;
     });
 
     if (categorySkills.length === 0) return { nodes: [], edges: [] };
@@ -1011,7 +1300,7 @@ const checkMissingPrereqs = useCallback((skill) => {
             onBgClick={() => setExpandedNode(null)}
             controls={
               <div className="flex overflow-x-auto custom-scrollbar bg-slate-800 p-1.5 pb-2 rounded-lg border border-slate-600 shadow-lg gap-1 pointer-events-auto max-w-[calc(100vw-3rem)] md:max-w-2xl">
-                 {['Warrior', 'Rogue', 'Mage', 'Demon Hunter', 'Arcane Grifter', 'Spell Singer', 'Miscellaneous'].map(cat => (
+                 {['Warrior', 'Rogue', 'Mage', 'Monk','Mystic Warrior','Arcane Grifter','Master Thief','Master Assassin','Sorcerer','Warlock','Master Warrior','Ranger','Druid','Cleric','Paladin','Dark Cleric','Dark Paladin', 'Demon Hunter','Spell Singer', 'Alchemist', 'Miscellaneous'].map(cat => (
                      <button 
                          key={cat}
                          onClick={() => { setTreeCategory(cat); setExpandedNode(null); }}
