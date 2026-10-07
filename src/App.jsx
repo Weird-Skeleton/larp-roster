@@ -1,21 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-
-import ReactDOM from 'react-dom/client';
-import App from './App.jsx';
 import './index.css';
-import ReactGA from 'react-ga4';
-
-// Initialize with your exact Measurement ID
-ReactGA.initialize("G-ZSWMHSK2XD");
-
-// Fire a pageview immediately on load
-ReactGA.send({ hitType: "pageview", page: window.location.pathname, title: "Character Editor Load" });
-
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-);
 
 // Initial default characters loaded if the local characters folder is empty
 const INITIAL_CHARACTERS = [

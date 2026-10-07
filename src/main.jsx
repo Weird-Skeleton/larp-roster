@@ -1,10 +1,15 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.jsx'
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App.jsx';
+import './index.css';
+import ReactGA from 'react-ga4'; // Add this import
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
+// Add your specific Measurement ID here
+ReactGA.initialize("G-ZSWMHSK2XD");
+ReactGA.send({ hitType: "pageview", page: window.location.pathname, title: "Character Editor Load" });
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
     <App />
-  </StrictMode>,
-)
+  </React.StrictMode>,
+);
